@@ -1,8 +1,84 @@
 #from auction import Auction
 from time import ctime
+from auction_mongo import get_db
 '''
 Listing Entity.
 '''
+
+'''
+Repository Class: Contains the methods necessary to call listings and auctions up and down from the database.
+Fetches the entity from storage and instantiates it as a usable python object, allowing me to call methods on it.
+'''
+
+class Repository:
+    '''
+    '''
+
+    def __init__(self, repo_name, db_address):
+        '''
+        '''
+        self.name = repo_name
+        self.connection = get_db(db_address)
+    
+    def get_listing(self, listing_id):
+        '''
+        '''
+        return self.connection['listings'].find_one({'listing_id': listing_id})
+
+
+    def delete_listing(self, user_id, listing_id):
+        '''
+        '''
+        listing = self.get_listing(listing_id)
+
+        if not listing:
+            return 404, 'Listing does not exist'
+
+        if user_id == listing.seller:
+            self.connection['listing'].delete_one({'listing_id': listing_id})
+            return 200, f'Permanently Deleted {listing_id}'
+        
+        return 400, 'Unauthorized deletion attempt.'
+
+    
+    def update_listing(self, user_id, listing_id, details):
+        '''
+        '''
+        
+        structure = ['listing_id',
+            'starting_price',
+            'increment',
+            'description',
+            'seller',
+            'watchers',
+            'live']
+
+        for detail in details:
+            if detail not in structure:
+                return 400, f'There is no listing detail named {detail}. Please select any of {structure}.'
+
+        listing = self.get_listing(listing_id)
+
+        if not listing:
+            return 404, 'Listing does not exist'
+
+        if user_id == listing.seller:
+            self.connection['listing'].update(listing_id, details)
+        
+        return 400, 'Unauthorized update attempt.'
+
+    
+    def view_live(self):
+        '''
+        '''
+        return self.connection['listings'].find({'live': True})
+
+    
+    def get_metrics(self, window_start, window_end):
+        '''
+        '''
+        
+
 
 class Listing:
     '''
@@ -43,6 +119,11 @@ class Listing:
             'watchers': self.watchers,
             'live': self.live
         }
+
+        auction_db = get_db()
+
+        auction_db['listings'].insert_one(listing_details)
+
         return listing_details
 
 
@@ -86,14 +167,6 @@ class Listing:
             return 201, self.bid_placed_alert(amount), self.outbid_alert(current_leader, amount) # Replace with ACTUAL IMPLEMENTATION
         
         return 201, self.bid_placed_alert(amount) # Replace with ACTUAL IMPLEMENTATION
-        
-
-    def delete_listing(self, user_id, listing_id):
-        '''
-        '''
-        if user_id == self.seller and listing_id == self.listing_id:
-            'send a delete query to the database'
-            return 200, f'Permanently Deleted {listing_id}'
 
 
     def outbid_alert(self, recipient, new_highest):
@@ -164,35 +237,52 @@ class Auction:
     def store_details(self):
         '''
         '''
-        return {
+        auction_details =  {
             'start time': self.start_time,
             'end time': self.end_time,
             'endgame': self.endgame,
             'current price': self.current_price,
             'bids': self.bid_list,
-            'id': self.auction_id,
+            'auction_id': self.auction_id,
             'seller': self.seller
         }
+
+        auction_db = get_db()
+        auction_db['auctions'].insert_one(auction_details)
+
+        return auction_details
 
     def mod_duration(self, start_time=None, end_time=None):
         '''
         '''
-
-        if start_time and end_time:
-            self.start_time = start_time
-            self.end_time = end_time
-            return 200, f'Now Starts: {self.start_time}. Now Ends: {self.end_time}' # Replace with ACTUAL IMPLEMENTATION
+        updates = {}
+        auction_db = get_db()
+        collection = auction_db['auctions']
+        doc = {'auction_id': self.auction_id}
         
-        elif end_time:
-            self.end_time = end_time
-            return 200, f'Now Ends: {self.end_time}' # Replace with ACTUAL IMPLEMENTATION
+        if start_time:
+            updates['start_time'] = start_time
+        if end_time:
+            updates['end_time'] = end_time
 
-        elif start_time:
-            self.start_time = start_time
-            return 200, f'Now Starts: {self.start_time}.' # Replace with ACTUAL IMPLEMENTATION
+        collection.update(doc, updates)
+
+
+        # if start_time and end_time:
+        #     self.start_time = start_time
+        #     self.end_time = end_time
+        #     return 200, f'Now Starts: {self.start_time}. Now Ends: {self.end_time}' # Replace with ACTUAL IMPLEMENTATION
         
-        else:
-            return 400, 'No modifications supplied, no changes made.'
+        # elif end_time:
+        #     self.end_time = end_time
+        #     return 200, f'Now Ends: {self.end_time}' # Replace with ACTUAL IMPLEMENTATION
+
+        # elif start_time:
+        #     self.start_time = start_time
+        #     return 200, f'Now Starts: {self.start_time}.' # Replace with ACTUAL IMPLEMENTATION
+        
+        # else:
+        #     return 400, 'No modifications supplied, no changes made.'
 
 
     def pass_winner(self):
