@@ -4,9 +4,6 @@ import time
 from flask import Flask, Response, request, make_response, jsonify, json, abort
 import requests
 from pymongo import MongoClient
-# from .notification_class import NotificationService
-# import psycopg2
-
 
 def create_app(test_config=None):
     # create and configure the app
@@ -19,15 +16,8 @@ def create_app(test_config=None):
     ## Make the database right here
     
     load_dotenv()
-
-    ## PSQL
-    # db_conn = psycopg2.connect(
-    #     host="localhost",
-    #     database="flask_db",
-    #     # user=os.environ[''],
-    #     # password=os.environ['']
-    # )
     
+    ## Change this to the docker host//IP ADDRESSS
     client = MongoClient("localhost", 27017)
     db_conn = client.ebay
 
@@ -270,7 +260,6 @@ class NotificationService:
             ## Handle sending the email
             request_title = request_body["title"]
             request_content = request_body["content"]
-            response_title = response_body["title"]
             response_content = response_body["content"]
             noti_title = "Responding to the request \"{}\"".format(request_title)
             noti_message = "Here is the response to your question:\n{}\n\nResponse:\n{}".format(request_content, response_content)
