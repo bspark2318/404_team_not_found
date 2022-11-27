@@ -5,6 +5,7 @@ import time
 from flask import Flask, Response, request, make_response, jsonify, json, abort
 import requests
 from pymongo import MongoClient
+from time import ctime
 
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
@@ -126,6 +127,16 @@ def create_app(test_config=None):
             response = create_response(404)
         elif start == 'unauthorized':
             response = create_response(400)
+        return response
+
+
+    @app.route('/take_bid', methods=["POST"])
+    def take_bid():
+        payload = request.json
+        bidder = payload['user_id']
+        highest_bid = payload['bid']
+        listing = service.handle_get_listing(payload['listing_id'])
+
 
 
     
@@ -263,10 +274,22 @@ class AuctionService:
         return live_auctions
 
 
-    def handle_start_auction(self, user_id, listing_id, details={'status':'live'}):
+    def handle_start_auction(self, user_id, listing_id, details={'status':'live', 'start_time': ctime()}):
         start = self.handle_update_listing(user_id, listing_id, details)
         return (start, ctime())
         # insert method for starting the timer
+
+    def handle_bids(self, bidder, highest_bid, listing):
+        if not listing:
+            return None
+        elif listing['status'] != 'live':
+            return 'dark'
+        elif highest_bid < listing['current_price'] + listing['increment']:
+            return 'low'
+        else:
+            prior_leader = None
+            bid = (bidder, highest_bid, ctime())
+
 
 
     def handle_buyer_outbid_alert(self, auction_title, auction_id, new_bid, old_bid, recipient):
