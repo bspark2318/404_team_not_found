@@ -1,5 +1,6 @@
 import os
 from dotenv import load_dotenv
+from datetime import datetime 
 import time 
 from flask import Flask, Response, request, make_response, jsonify, json, abort
 import requests
@@ -92,15 +93,71 @@ def create_app(test_config=None):
 
 
     
-    # {
-    # "auction_title": "New Dog",
-    # "new_bid": 12,
-    # "old_bid": 10,
-    # "auction_id": "12",
-    # "timestamp": "2022-12-02:16:22:02",
-    # "recipient": ["ebspark1994@uchicago.edu", "bspark2318@gmail.com"]
-    # }
+    def alert_out_bid(prior_leader, prior_bid, highest_bid, listing_id, listing_name):
+        
+        post_body = {}
+        post_body["auction_title"] = listing_name
+        post_body["new_bid"] = highest_bid
+        post_body["old_bid"] = prior_bid
+        post_body["auction_id"] = listing_id
+        dt = datetime.now()
+        post_body["timestamp"] = datetime.timestamp(dt)
+        post_body["recipient"] = [prior_leader]
+        
+        ## Do we need to implement this through async pub sub?
+        ## Will need to change the URL later on
+        resp = requests.post(
+            "http://localhost:5000/alert_buyer_outbid",
+            json=post_body
+        )
+        
+        print("alert out bid result: ", resp)
+        
+        return True 
+    
+    def bid_placed_alert(listing_id, listing_name, prior_bid, amount, bidder, seller):
+        
+        post_body = {}
+        post_body["auction_title"] = listing_name
+        post_body["auction_id"] = listing_id
+        post_body["new_bid"] = amount
+        post_body["old_bid"] = prior_bid
+        dt = datetime.now()
+        post_body["timestamp"] = datetime.timestamp(dt)
+        post_body["recipient"] = [seller]
+        
+        ## Do we need to implement this through async pub sub?
+        ## Will need to change the URL later on
+        resp = requests.post(
+            "http://localhost:5000/alert_seller_bid",
+            json=post_body
+        )
+        
+        print("alert seller bid result: ", resp)
+        
+        return True 
 
+    def end_game_alert(listing_id, listing_name, prior_bid, amount, e_time, bidders, watchers, seller):
+        
+        post_body = {}
+        post_body["auction_title"] = listing_name
+        post_body["auction_id"] = listing_id
+        post_body["current_bid"] = amount
+        post_body["old_bid"] = prior_bid
+        dt = datetime.now()
+        post_body["timestamp"] = datetime.timestamp(dt)
+        post_body["end_time"] = e_time
+        post_body["recipient"] = watchers
+        
+        ## Do we need to implement this through async pub sub?
+        ## Will need to change the URL later on
+        resp = requests.post(
+            "http://localhost:5000/alert_countdown",
+            json=post_body
+        )
+        print("alert End Game: ", resp)
+        
+        return True 
     
 
 
