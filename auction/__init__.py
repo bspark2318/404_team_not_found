@@ -87,9 +87,45 @@ def create_app(test_config=None):
         
         return response
 
-    @app.route('/update_listing', methods=["DELETE"])
+    @app.route('/update_listing', methods=["POST"])
     def update_listing():
         payload = request.json
+        user = payload['user_id']
+        listing_id = payload['listing_id']
+        details = payload['details']
+
+        update = service.handle_update_listing(user, listing_id, details)
+        
+        if update == 'success':
+            response = create_response(200, 'details', details)
+        elif not update:
+            response = create_response(404)
+        elif update == 'unauthorized':
+            response = create_response(400)
+
+        return response
+
+
+    @app.route('/view_live', methods=["GET"])
+    def view_live():
+        live_auctions = service.handle_view_live()
+        response = create_response(200 if live_auctions else 400, 
+                    field_name='Live Auctions', field_obj=live_auctions)
+
+        return response
+        
+    @app.route('/start_auction', methods=["POST"])
+    def start_auction():
+        payload = request.json
+        listing_id = payload['listing_id']
+        user = payload['user_id']
+        start, time = service.handle_start_auction(user, listing_id)
+        if start == 'success':
+            response = create_response(200, 'auction begun', time)
+        elif not start:
+            response = create_response(404)
+        elif start == 'unauthorized':
+            response = create_response(400)
 
 
     
@@ -211,8 +247,26 @@ class AuctionService:
             return 'success'
 
     
-    def handle_update_listing():
-        pass
+    def handle_update_listing(self, user_id, listing_id, details):
+        listing = self.handle_get_listing(listing_id)
+        if not listing:
+            return None
+        elif listing['seller'] != user_id:
+            return 'unauthorized'
+        else:
+            self.db.update(listing_id, details)
+            return 'success'
+
+
+    def handle_view_live(self):
+        live_auctions = self.db.find({'live': True})
+        return live_auctions
+
+
+    def handle_start_auction(self, user_id, listing_id, details={'status':'live'}):
+        start = self.handle_update_listing(user_id, listing_id, details)
+        return (start, ctime())
+        # insert method for starting the timer
 
 
     def handle_buyer_outbid_alert(self, auction_title, auction_id, new_bid, old_bid, recipient):
