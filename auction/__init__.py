@@ -146,13 +146,13 @@ def create_app(test_config=None):
             elif accepted == 'dark' or accepted == 'low':
                 return create_response(400)
             elif accepted == 'success':
-                alert_out_bid(prior_leader, prior_bid, highest_bid, listing_id, listing_name)
-                bid_placed_alert(listing_id, listing_name, prior_bid, highest_bid, bidder, seller)
+                service.alert_out_bid(prior_leader, prior_bid, highest_bid, listing_id, listing_name)
+                service.bid_placed_alert(listing_id, listing_name, prior_bid, highest_bid, bidder, seller)
                 return create_response(200, field_name="Bid Placed", field_obj=(listing_name, highest_bid))    
   
         else:
             accepted, prior_bid, listing_id, listing_name, seller, highest_bid, bidder = rv
-            bid_placed_alert(listing_id, listing_name, prior_bid, highest_bid, bidder, seller)
+            service.bid_placed_alert(listing_id, listing_name, prior_bid, highest_bid, bidder, seller)
             return create_response(200, field_name="Bid Placed", field_obj=(listing_name, highest_bid))
 
     @app.route('/view_metrics', methods=["GET"])
@@ -183,77 +183,33 @@ def create_app(test_config=None):
         }
 
         # Send these to payout details. BumSu, let me know if payments needs more info
+        # What is needed for payment
+        # {
+        # "user_id": "13",
+        # "cart_id": "12312312",
+        # "total": 46.12,
+        # "payment_method": {
+        #     "currency": "usd",
+        #     "method": "card",
+        #     "method_detail": {
+        #         "card_number": "4123123212322222",
+        #         "security_code": "931",
+        #         "holder_name": "BumSu Park",
+        #         "billing_address": {
+        #             "street_address": "1407 S. State St",
+        #             "city": "Chicago",
+        #             "state": "IL",
+        #             "zipcode": "60605",
+        #             "country": "USA"
+        #             }
+        #         }
+        #     }
+        # }   
 
         return payout_details
 
     
-    def alert_out_bid(prior_leader, prior_bid, highest_bid, listing_id, listing_name):
-        
-        post_body = {}
-        post_body["auction_title"] = listing_name
-        post_body["new_bid"] = highest_bid
-        post_body["old_bid"] = prior_bid
-        post_body["auction_id"] = listing_id
-        dt = datetime.now()
-        post_body["timestamp"] = datetime.timestamp(dt)
-        post_body["recipient"] = [prior_leader]
-        
-        ## Do we need to implement this through async pub sub?
-        ## Will need to change the URL later on
-        resp = requests.post(
-            "http://localhost:5000/alert_buyer_outbid",
-            json=post_body
-        )
-        
-        print("alert out bid result: ", resp)
-        
-        return True 
     
-
-    def bid_placed_alert(listing_id, listing_name, prior_bid, amount, bidder, seller):
-        
-        post_body = {}
-        post_body["auction_title"] = listing_name
-        post_body["auction_id"] = listing_id
-        post_body["new_bid"] = amount
-        post_body["old_bid"] = prior_bid
-        dt = datetime.now()
-        post_body["timestamp"] = datetime.timestamp(dt)
-        post_body["recipient"] = [seller]
-        
-        ## Do we need to implement this through async pub sub?
-        ## Will need to change the URL later on
-        resp = requests.post(
-            "http://localhost:5000/alert_seller_bid",
-            json=post_body
-        )
-        
-        print("alert seller bid result: ", resp)
-        
-        return True 
-
-
-    def end_game_alert(listing_id, listing_name, prior_bid, amount, e_time, bidders, watchers, seller):
-        
-        post_body = {}
-        post_body["auction_title"] = listing_name
-        post_body["auction_id"] = listing_id
-        post_body["current_bid"] = amount
-        post_body["old_bid"] = prior_bid
-        dt = datetime.now()
-        post_body["timestamp"] = datetime.timestamp(dt)
-        post_body["end_time"] = e_time
-        post_body["recipient"] = watchers
-        
-        ## Do we need to implement this through async pub sub?
-        ## Will need to change the URL later on
-        resp = requests.post(
-            "http://localhost:5000/alert_countdown",
-            json=post_body
-        )
-        print("alert End Game: ", resp)
-        
-        return True 
 
 
     return app
@@ -485,5 +441,74 @@ class AuctionService:
             return False
         
         return True
+    
+    
+                
+    def alert_out_bid(self, prior_leader, prior_bid, highest_bid, listing_id, listing_name):
         
+        post_body = {}
+        post_body["auction_title"] = listing_name
+        post_body["new_bid"] = highest_bid
+        post_body["old_bid"] = prior_bid
+        post_body["auction_id"] = listing_id
+        dt = datetime.now()
+        post_body["timestamp"] = datetime.timestamp(dt)
+        post_body["recipient"] = [prior_leader]
+        
+        ## Do we need to implement this through async pub sub?
+        ## Will need to change the URL later on
+        resp = requests.post(
+            "http://localhost:5000/alert_buyer_outbid",
+            json=post_body
+        )
+        
+        print("alert out bid result: ", resp)
+        
+        return True 
+    
+
+    def bid_placed_alert(self, listing_id, listing_name, prior_bid, amount, bidder, seller):
+        
+        post_body = {}
+        post_body["auction_title"] = listing_name
+        post_body["auction_id"] = listing_id
+        post_body["new_bid"] = amount
+        post_body["old_bid"] = prior_bid
+        dt = datetime.now()
+        post_body["timestamp"] = datetime.timestamp(dt)
+        post_body["recipient"] = [seller]
+        
+        ## Do we need to implement this through async pub sub?
+        ## Will need to change the URL later on
+        resp = requests.post(
+            "http://localhost:5000/alert_seller_bid",
+            json=post_body
+        )
+        
+        print("alert seller bid result: ", resp)
+        
+        return True 
+
+
+    def end_game_alert(self, listing_id, listing_name, prior_bid, amount, e_time, bidders, watchers, seller):
+        
+        post_body = {}
+        post_body["auction_title"] = listing_name
+        post_body["auction_id"] = listing_id
+        post_body["current_bid"] = amount
+        post_body["old_bid"] = prior_bid
+        dt = datetime.now()
+        post_body["timestamp"] = datetime.timestamp(dt)
+        post_body["end_time"] = e_time
+        post_body["recipient"] = watchers
+        
+        ## Do we need to implement this through async pub sub?
+        ## Will need to change the URL later on
+        resp = requests.post(
+            "http://localhost:5000/alert_countdown",
+            json=post_body
+        )
+        print("alert End Game: ", resp)
+        
+        return True 
     
