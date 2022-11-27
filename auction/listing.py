@@ -122,8 +122,8 @@ class Listing(mongoengine.Document):
         return 200, recipients, message  # Replace with ACTUAL IMPLEMENTATION
 
 
-        def __repr__(self):
-            '''
-            '''
-            return f'{dict(self.to_mongo())}'
-            #return f'Listing Number: {self.listing_id} contains {self.description}.'
+def __repr__(self):
+    '''
+    '''
+    return f'{dict(self.to_mongo())}'
+    #return f'Listing Number: {self.listing_id} contains {self.description}.'
