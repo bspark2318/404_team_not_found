@@ -61,7 +61,38 @@ def create_app(test_config=None):
         response = create_response( 201 if listing else 400 , field_name="listing_details", field_obj=listing)
         return response
     
+
+    @app.route('/get_listing', methods=["GET"])
+    def get_listing():
+        payload = request.json
+        listing_id = payload['listing_id']
+        listing = service.handle_get_listing(listing_id)
+        response = create_response(200 if listing else 404, field_name='listing details', field_obj=listing)
+
+    @app.route('/delete_listing', methods=["DELETE"])
+    def delete_listing():
+        payload = request.json
+        listing_id = payload['listing_id']
+        user = payload['user_id']
+        deletion = service.handle_delete_listin(listing_id, user)
+        if deletion == 'success':
+            response = create_response(200)
+        elif not deletion:
+            response = create_response(404)
+        elif deletion == 'unauthorized':
+            response = create_response(400)
+        
+        return response
+
+
+    @app.route('/update_listing', methods=["DELETE"])
+    def update_listing():
+        payload = request.json
+
     return app
+
+    
+        
 
 
 class AuctionService:
@@ -75,7 +106,7 @@ class AuctionService:
             ## Handle this later. Check if already exists
                         
             listing_obj = {} 
-            dest_source = [("listing_id", 'item_id'), ("start_time", 'start_time'), ("starting_price", 'price'),
+            dest_source = [("listing_id", 'item_id'), ("listing_name", 'item_name')("start_time", 'start_time'), ("starting_price", 'price'),
             ("current_price", 'price'), ("increment", 'increment'), ("description", 'description'), 
             ("seller", 'user_id'), ("watchers", 'watchers'), ("end_time", 'end_time'), ("endgame", 'endgame')]
             
@@ -89,7 +120,28 @@ class AuctionService:
         except Exception as e:
             print("Error: Failure to execute \"handle_create_listing\" due to {}".format(e))
             return None
+
+
+    def handle_get_listing(self, listing_id):
+        '''
+        '''
+        return self.db.find_one({'listing_id': listing_id})
+        
+
+    def handle_delete_listing(self, listing_id, user):
+        listing = self.handle_get_listing(listing_id)
+        if not listing:
+            return None
+        elif listing['seller'] != user:
+            return 'unauthorized'
+        else:
+            self.db.delete_one({'listing_id': listing_id})
+            return 'success'
+
     
+    def handle_update_listing():
+
+
     def handle_buyer_outbid_alert(self, auction_title, auction_id, new_bid, old_bid, recipient):
         try:
             ## Handle sending the email
