@@ -20,7 +20,23 @@ def close_db(e=None):
 
     if db is not None:
         db.close()
-        
+    
+
+'''
+CREATE DATABASE ebay;
+\c ebay; 
+DROP TABLE IF EXISTS transactions;
+CREATE TABLE transactions (
+    transaction_id SERIAL PRIMARY KEY NOT NULL, 
+    user_id VARCHAR(40) NOT NULL, 
+    cart_id VARCHAR(40) NOT NULL, 
+    total  NUMERIC(9, 2) NOT NULL, 
+    method VARCHAR(40) NOT NULL, 
+    transaction_time TIMESTAMP DEFAULT NOW()
+);
+
+'''
+
 # 2022-11-26 17:36:06.564 CST [89259] LOG:  listening on IPv6 address "::1", port 5432
 # 2022-11-26 17:36:06.564 CST [89259] LOG:  listening on IPv4 address "127.0.0.1", port 5432
 # 2022-11-26 17:36:06.565 CST [89259] LOG:  listening on Unix socket "/tmp/.s.PGSQL.5432"
