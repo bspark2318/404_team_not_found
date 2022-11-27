@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 import time 
 from flask import Flask, Response, request, make_response, jsonify, json, abort
 import requests
-from pymongo import MongoClient, json_util
+from pymongo import MongoClient
 
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
@@ -40,8 +40,6 @@ def create_app(test_config=None):
         response_json = {}
         response = make_response()
         if field_name and field_obj:
-            print("Check here")
-            print(json.loads(json_util.dumps(field_obj)))
             response_json[field_name] = field_obj
             ## Fix this for 
             response = make_response(jsonify(response_json))
@@ -57,7 +55,11 @@ def create_app(test_config=None):
     def create_listing():
         payload = request.json
         item_details = payload['item_details']
+        
         listing = service.handle_create_listing(item_details)
+        if listing:
+            del listing['_id']
+        
         response = create_response( 201 if listing else 400 , field_name="listing_details", field_obj=listing)
         return response
     
@@ -74,7 +76,7 @@ def create_app(test_config=None):
         payload = request.json
         listing_id = payload['listing_id']
         user = payload['user_id']
-        deletion = service.handle_delete_listin(listing_id, user)
+        deletion = service.handle_delete_listing(listing_id, user)
         if deletion == 'success':
             response = create_response(200)
         elif not deletion:
@@ -84,10 +86,23 @@ def create_app(test_config=None):
         
         return response
 
-
     @app.route('/update_listing', methods=["DELETE"])
     def update_listing():
         payload = request.json
+
+
+    
+    # {
+    # "auction_title": "New Dog",
+    # "new_bid": 12,
+    # "old_bid": 10,
+    # "auction_id": "12",
+    # "timestamp": "2022-12-02:16:22:02",
+    # "recipient": ["ebspark1994@uchicago.edu", "bspark2318@gmail.com"]
+    # }
+
+    
+
 
     return app
 
@@ -106,7 +121,7 @@ class AuctionService:
             ## Handle this later. Check if already exists
                         
             listing_obj = {} 
-            dest_source = [("listing_id", 'item_id'), ("listing_name", 'item_name')("start_time", 'start_time'), ("starting_price", 'price'),
+            dest_source = [("listing_id", 'item_id'), ("listing_name", 'item_name'), ("start_time", 'start_time'), ("starting_price", 'price'),
             ("current_price", 'price'), ("increment", 'increment'), ("description", 'description'), 
             ("seller", 'user_id'), ("watchers", 'watchers'), ("end_time", 'end_time'), ("endgame", 'endgame')]
             
@@ -140,6 +155,7 @@ class AuctionService:
 
     
     def handle_update_listing():
+        pass
 
 
     def handle_buyer_outbid_alert(self, auction_title, auction_id, new_bid, old_bid, recipient):
