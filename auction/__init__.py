@@ -5,7 +5,7 @@ import time
 from flask import Flask, Response, request, make_response, jsonify, json, abort
 import requests
 from pymongo import MongoClient
-from time import ctime
+from time import ctime, sleep
 
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
@@ -265,6 +265,22 @@ def create_app(test_config=None):
 class AuctionService:
     def __init__(self, conn):
         self.db = conn.listings
+
+    def countdown(self, start, end):
+        start = datetime.strptime(start, '%Y-%m-%d %H:%M:%S')
+        end = datetime.strptime(end, '%Y-%m-%d %H:%M:%S')
+        time = end - start
+        time = time.total_seconds()
+        while time:
+            mins, secs = divmod(time, 60)
+            # timer = '{:02d}:{:02d}'.format(mins, secs)
+            sleep(1)
+            time -= 1
+            print(time)
+        
+        return True
+
+
     
     def handle_create_listing(self, item_details):
         
