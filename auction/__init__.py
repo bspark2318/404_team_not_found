@@ -136,24 +136,26 @@ def create_app(test_config=None):
         payload = request.json
         bidder = payload['user_id']
         highest_bid = payload['bid']
-        listing = service.handle_get_listing(payload['listing_id'])
-        rv = service.handle_bids(bidder, highest_bid, listing)
 
-        if len(rv) == 8:
-            accepted, prior_leader, prior_bid, listing_id, listing_name, seller, highest_bid, bidder = rv
-            if not accepted:
-                return create_response(404)
-            elif accepted == 'dark' or accepted == 'low':
-                return create_response(400)
-            elif accepted == 'success':
+        listing = service.handle_get_listing(payload['listing_id'])
+
+        if not listing:
+            return create_response(404)
+        elif listing['status'] != 'live' or highest_bid < listing['current_price'] + listing['increment']:
+            return create_response(400)
+        else:
+            rv = service.handle_bids(bidder, highest_bid, listing)
+            if len(rv) == 8:
+                _, prior_leader, prior_bid, listing_id, listing_name, seller, highest_bid, bidder = rv
+
                 service.alert_out_bid(prior_leader, prior_bid, highest_bid, listing_id, listing_name)
                 service.bid_placed_alert(listing_id, listing_name, prior_bid, highest_bid, bidder, seller)
                 return create_response(200, field_name="Bid Placed", field_obj=(listing_name, highest_bid))    
-  
-        else:
-            accepted, prior_bid, listing_id, listing_name, seller, highest_bid, bidder = rv
-            service.bid_placed_alert(listing_id, listing_name, prior_bid, highest_bid, bidder, seller)
-            return create_response(200, field_name="Bid Placed", field_obj=(listing_name, highest_bid))
+    
+            elif len(rv) == 7:
+                _, prior_bid, listing_id, listing_name, seller, highest_bid, bidder = rv
+                service.bid_placed_alert(listing_id, listing_name, prior_bid, highest_bid, bidder, seller)
+                return create_response(200, field_name="Bid Placed", field_obj=(listing_name, highest_bid))
 
     @app.route('/view_metrics', methods=["GET"])
     def view_metrics():
@@ -299,34 +301,27 @@ class AuctionService:
         # insert method for starting the timer
 
     def handle_bids(self, bidder, highest_bid, listing):
-        if not listing:
-            return None
-        elif listing['status'] != 'live':
-            return 'dark'
-        elif highest_bid < listing['current_price'] + listing['increment']:
-            return 'low'
+        prior_leader = None
+        prior_bid = None
+        listing_name = listing['listing_name']
+        listing_id = listing['listing_id']
+        seller = listing['seller_email']
+        bid = (bidder, highest_bid, ctime())
+        if listing['bid_list']:
+            prior_leader, prior_bid, _ = listing['bid_list'][0]
+
+        accepted = self.handle_update_listing(listing['seller'], listing, 
+                                            {'current_price' : highest_bid, 
+                                            'bid_list': listing['bid_list'].insert(0, bid)})
+        
+        #rv = (accepted, get_email_func(prior_leader), prior_bid, listing_id, listing_name, seller, highest_bid, get_email_func(bidder))
+
+        if prior_leader and bidder != prior_leader:
+            rv = (accepted, prior_leader, prior_bid, listing_id, listing_name, seller, highest_bid, bidder)
         else:
-            prior_leader = None
-            prior_bid = None
-            listing_name = listing['listing_name']
-            listing_id = listing['listing_id']
-            seller = 
-            bid = (bidder, highest_bid, ctime())
-            if listing['bid_list']:
-                prior_leader, prior_bid, _ = listing['bid_list'][0]
+            rv = (accepted, prior_bid, listing_id, listing_name, seller, highest_bid, bidder)
 
-            accepted = self.handle_update_listing(listing['seller'], listing, 
-                                                {'current_price' : highest_bid, 
-                                                'bid_list': listing['bid_list'].insert(0, bid)})
-            
-            #rv = (accepted, get_email_func(prior_leader), prior_bid, listing_id, listing_name, seller, highest_bid, get_email_func(bidder))
-
-            if prior_leader and bidder != prior_leader:
-                rv = (accepted, prior_leader, prior_bid, listing_id, listing_name, seller, highest_bid, bidder)
-            else:
-                rv = (accepted, prior_bid, listing_id, listing_name, seller, highest_bid, bidder)
-
-            return rv
+        return rv
             
     def handle_view_metrics(self, window_start, window_end):
         req_auctions = self.db.find({'end_time' : {'$gte': window_start, '$lte': window_end}})
