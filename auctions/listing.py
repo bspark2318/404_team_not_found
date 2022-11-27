@@ -57,11 +57,11 @@ class Listing(mongoengine.Document):
 
         rep.update_listing(self.seller, self.listing_id, {'current_price':self.current_price, 'bid_list': self.bid_list})
     
+        #self.bid_placed_alert() ACTUAL IMPLEMENTATION
 
-        if current_leader and bidder != current_leader: # New highest bidder
-            self.outbid_alert(current_leader, amount)
-        self.bid_placed_alert(amount)
-            #return 201, f'hi bidder,bid placed at {amount}. hi seller, your auction {self.listing_id} received a bid of {amount}' # Replace with ACTUAL IMPLEMENTATION
+        if current_leader and bidder != current_leader:
+            #self.outbid_alert(current_leader, amount) ACTUAL IMPLEMENTATION
+            return 201, f'hi bidder,bid placed at {amount}. hi seller, your auction {self.listing_id} received a bid of {amount}' # Replace with ACTUAL IMPLEMENTATION
         
         return 201, f'hi seller, your auction {self.listing_id} received a bid of {amount}'
 
@@ -81,49 +81,10 @@ class Listing(mongoengine.Document):
         'send payour_details to PAYMENT PROCESSING for execution'
 
         return 200, payout_details  # Replace with ACTUAL IMPLEMENTATION
-    
 
-    def outbid_alert(self, recipient, new_highest):
+
+    def __repr__(self):
         '''
         '''
-        message = f'''
-            You have been outbid on {self.listing_id}. The new highest bid is {new_highest}.
-        '''
-        'send (recipient, message) to NOTIFICATION SERVICE for delivery'
-        return 200, (recipient, message) # Replace with ACTUAL IMPLEMENTATION
-
-
-    def bid_placed_alert(self, new_highest):
-        '''
-        '''
-
-        message = f'''
-            A new bid of {new_highest} was placed on {self.listing_id}.
-        '''
-
-        'send (self.seller, message) to NOTIFICATION SERVICE for delivery'
-
-        return 200, self.seller, message  # Replace with ACTUAL IMPLEMENTATION
-
-
-    def endgame_alert(self):
-        '''
-        '''
-        recipients = set(self.watchers)
-
-        for bid in self.auction.bid_list:
-            recipients.add(bid[0])
-
-        message = f'''
-            The auction for {self.listing_id} will end at {self.auction.endgame}. The price is currently {self.auction.current_price}.
-        '''
-        'send (recipients, message) to NOTIFICATION SERVICE for delivery'
-
-        return 200, recipients, message  # Replace with ACTUAL IMPLEMENTATION
-
-
-        def __repr__(self):
-            '''
-            '''
-            return f'{dict(self.to_mongo())}'
-            #return f'Listing Number: {self.listing_id} contains {self.description}.'
+        return f'{dict(self.to_mongo())}'
+        #return f'Listing Number: {self.listing_id} contains {self.description}.'
