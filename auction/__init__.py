@@ -94,8 +94,9 @@ def create_app(test_config=None):
         user = payload['user_id']
         listing_id = payload['listing_id']
         details = payload['details']
+        listing = service.handle_get_listing(listing_id)
 
-        update = service.handle_update_listing(user, listing_id, details)
+        update = service.handle_update_listing(user, listing, details)
         
         if update == 'success':
             response = create_response(200, 'details', details)
@@ -136,8 +137,54 @@ def create_app(test_config=None):
         bidder = payload['user_id']
         highest_bid = payload['bid']
         listing = service.handle_get_listing(payload['listing_id'])
+        rv = service.handle_bids(bidder, highest_bid, listing)
+
+        if len(rv) == 8:
+            accepted, prior_leader, prior_bid, listing_id, listing_name, seller, highest_bid, bidder = rv
+            if not accepted:
+                return create_response(404)
+            elif accepted == 'dark' or accepted == 'low':
+                return create_response(400)
+            elif accepted == 'success':
+                alert_out_bid(prior_leader, prior_bid, highest_bid, listing_id, listing_name)
+                bid_placed_alert(listing_id, listing_name, prior_bid, highest_bid, bidder, seller)
+                return create_response(200, field_name="Bid Placed", field_obj=(listing_name, highest_bid))    
+  
+        else:
+            accepted, prior_bid, listing_id, listing_name, seller, highest_bid, bidder = rv
+            bid_placed_alert(listing_id, listing_name, prior_bid, highest_bid, bidder, seller)
+            return create_response(200, field_name="Bid Placed", field_obj=(listing_name, highest_bid))
+
+    @app.route('/view_metrics', methods=["GET"])
+    def view_metrics():
+        payload = request.json
+        window_start = payload['window_start']
+        window_end = payload['window_end']
+
+        req_auctions = service.handle_view_metrics(window_start, window_end)
+        
+        return create_response(200 if req_auctions else 404, 
+                              field_name=f'{window_start} - {window_end}', 
+                              field_obj=req_auctions)
 
 
+    def pass_winner(listing_id):
+        #Triggered when ctime == end_time
+        payload = request.json
+        listing_id = payload['listing_id']
+        listing = service.handle_get_listing(listing_id)
+        winner, amount = listing['bid_list'][0]
+        payout_details = {
+            'winner': winner,
+            'cost': amount,
+            'seller': listing['seller'],
+            'seller_email': listing['seller_email'],
+            'item': listing_id
+        }
+
+        # Send these to payout details. BumSu, let me know if payments needs more info
+
+        return payout_details
 
     
     def alert_out_bid(prior_leader, prior_bid, highest_bid, listing_id, listing_name):
@@ -162,6 +209,7 @@ def create_app(test_config=None):
         
         return True 
     
+
     def bid_placed_alert(listing_id, listing_name, prior_bid, amount, bidder, seller):
         
         post_body = {}
@@ -184,6 +232,7 @@ def create_app(test_config=None):
         
         return True 
 
+
     def end_game_alert(listing_id, listing_name, prior_bid, amount, e_time, bidders, watchers, seller):
         
         post_body = {}
@@ -205,7 +254,6 @@ def create_app(test_config=None):
         print("alert End Game: ", resp)
         
         return True 
-    
 
 
     return app
@@ -227,7 +275,7 @@ class AuctionService:
             listing_obj = {} 
             dest_source = [("listing_id", 'item_id'), ("listing_name", 'item_name'), ("start_time", 'start_time'), ("starting_price", 'price'),
             ("current_price", 'price'), ("increment", 'increment'), ("description", 'description'), 
-            ("seller", 'user_id'), ("watchers", 'watchers'), ("end_time", 'end_time'), ("endgame", 'endgame')]
+            ("seller", 'user_id'), ("seller_email", 'owner_email'), ("watchers", 'watchers'), ("end_time", 'end_time'), ("endgame", 'endgame')]
             
             for dest, source in dest_source:
                 listing_obj[dest] = item_details[source]
@@ -258,14 +306,13 @@ class AuctionService:
             return 'success'
 
     
-    def handle_update_listing(self, user_id, listing_id, details):
-        listing = self.handle_get_listing(listing_id)
+    def handle_update_listing(self, user, listing, details):
         if not listing:
             return None
-        elif listing['seller'] != user_id:
+        elif listing['seller'] != user:
             return 'unauthorized'
         else:
-            self.db.update(listing_id, details)
+            self.db.update(listing['listing_id'], details)
             return 'success'
 
 
@@ -288,8 +335,30 @@ class AuctionService:
             return 'low'
         else:
             prior_leader = None
+            prior_bid = None
+            listing_name = listing['listing_name']
+            listing_id = listing['listing_id']
+            seller = 
             bid = (bidder, highest_bid, ctime())
+            if listing['bid_list']:
+                prior_leader, prior_bid, _ = listing['bid_list'][0]
 
+            accepted = self.handle_update_listing(listing['seller'], listing, 
+                                                {'current_price' : highest_bid, 
+                                                'bid_list': listing['bid_list'].insert(0, bid)})
+            
+            #rv = (accepted, get_email_func(prior_leader), prior_bid, listing_id, listing_name, seller, highest_bid, get_email_func(bidder))
+
+            if prior_leader and bidder != prior_leader:
+                rv = (accepted, prior_leader, prior_bid, listing_id, listing_name, seller, highest_bid, bidder)
+            else:
+                rv = (accepted, prior_bid, listing_id, listing_name, seller, highest_bid, bidder)
+
+            return rv
+            
+    def handle_view_metrics(self, window_start, window_end):
+        req_auctions = self.db.find({'end_time' : {'$gte': window_start, '$lte': window_end}})
+        return req_auctions
 
 
     def handle_buyer_outbid_alert(self, auction_title, auction_id, new_bid, old_bid, recipient):
