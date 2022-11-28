@@ -312,9 +312,10 @@ class AuctionService:
         listing_id = listing['listing_id']
         seller = listing['seller_email']
         bid = (bidder, highest_bid, ctime())
-        if not listing['bid_list']:
-            
-        if listing['bid_list']:
+        
+        if 'bid_list' not in listing.keys():
+            listing['bid_list'] = []
+        else:
             prior_leader, prior_bid, _ = listing['bid_list'][0]
 
         accepted = self.handle_update_listing(listing['seller'], listing, 
