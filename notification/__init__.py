@@ -1,3 +1,4 @@
+import sys
 import os
 from dotenv import load_dotenv
 import time 
@@ -16,9 +17,16 @@ def create_app(test_config=None):
     ## Make the database right here
     
     load_dotenv()
+    connString = os.environ['MONGODB_CONNSTRING']
+    print("connString", connString)
+    
     
     ## Change this to the docker host//IP ADDRESSS
-    client = MongoClient("localhost", 27017)
+    client = MongoClient(connString, 27017)
+    
+    print("Is there a connection?", client)
+    
+    # client = MongoClient("localhost", 27017)
     db_conn = client.ebay
 
     if test_config is None:
@@ -223,8 +231,12 @@ class NotificationService:
                 records.append(storage_obj)
             
             self.db.insert_many(records)
-        except:
-            print("Error: Failure to execute \"handle_seller_bid_alert\"")
+            
+            
+        except Exception as e:
+            print("Error: Failure to execute \"handle_seller_bid_alert\"", file=sys.stderr)
+            print(e, file=sys.stderr)
+            
             return False
         
         return True

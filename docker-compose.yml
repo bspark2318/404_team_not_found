@@ -3,6 +3,9 @@ version: "3.7"
 services:
   notification:
     build: ./notification/.  
+    container_name: notification_service
+    environment: 
+      - MONGODB_CONNSTRING=mongodb://notification_db
     ports:
       - "5000:5000"
   
@@ -13,3 +16,5 @@ services:
     container_name: notification_db 
     volumes: 
       - /Users/user/data/mongo
+
+
