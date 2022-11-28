@@ -1,5 +1,5 @@
 import os
-from dotenv import load_dotenv
+from dotenv  import load_dotenv
 from datetime import datetime 
 import time 
 from flask import Flask, Response, request, make_response, jsonify, json, abort
@@ -14,13 +14,14 @@ def create_app(test_config=None):
         SECRET_KEY='dev',
         DATABASE=os.path.join(app.instance_path, 'flaskr.sqlite'),
     )
+
     #
     ## Make the database right here
     
     load_dotenv()
     
     ## Change this to the docker host//IP ADDRESSS
-    client = MongoClient("localhost", 27017)
+    client = MongoClient(host="mongo://db:27017")
     db_conn = client.core
 
     if test_config is None:
