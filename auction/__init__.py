@@ -2,6 +2,7 @@ import os
 from dotenv  import load_dotenv
 from datetime import datetime 
 import time 
+import sys
 from flask import Flask, Response, request, make_response, jsonify, json, abort
 import requests
 from pymongo import MongoClient
@@ -19,10 +20,14 @@ def create_app(test_config=None):
     ## Make the database right here
     
     load_dotenv()
+    connString = os.environ['MONGODB_CONNSTRING']
     
     ## Change this to the docker host//IP ADDRESSS
-    client = MongoClient(host="db")
+    client = MongoClient(connString, 27017)
     db_conn = client.core
+    print(client)
+
+
 
     if test_config is None:
         # load the instance config, if it exists, when not testing
@@ -273,7 +278,7 @@ class AuctionService:
             return listing_obj
             
         except Exception as e:
-            print("Error: Failure to execute \"handle_create_listing\" due to {}".format(e))
+            print("Error: Failure to execute \"handle_create_listing\" due to {}".format(e), file=sys.stderr)
             return None
 
 
