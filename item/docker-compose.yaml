@@ -1,0 +1,49 @@
+version: '3'
+services:
+  itemservice:
+    build: .
+    container_name: item_service
+    environment:
+      - MONGODB_CONNSTRING=mongodb://item_db
+    ports:
+      - "5000:5000"
+  item_mongodb:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    container_name: item_db 
+    volumes: 
+      - /data/db
+
+
+
+# # BackUp
+# version: '3'
+# services:
+#   itemservice:
+#     build: .
+#     container_name: item_service
+#     environment:
+#     #  - MONGODB_CONNSTRING=mongodb://localhost:27017
+#       - MONGODB_CONNSTRING=mongodb://item_db
+#     ports:
+#       - "5000:5000"
+#     # volumes:
+#     #   - .:/app
+#     # links:
+#     #   - mongodb
+#   item_mongodb:
+#     image: mongo:latest
+# #    environment:
+# #      - MONGO_INITDB_DATABASE=user
+# #      - MONGO_INITDB_ROOT_USERNAME=root
+# #      - MONGO_INITDB_ROOT_PASSWORD=admin
+#   #  volumes:
+#   #    - mongodbdata:/data/db
+#     ports:
+#       - "27017:27017"
+#     container_name: item_db 
+#     volumes: 
+#       - /data/db
+# #volumes:
+# #  mongodbdata:
