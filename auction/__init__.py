@@ -155,11 +155,13 @@ def create_app(test_config=None):
 
                 service.alert_out_bid(prior_leader, prior_bid, highest_bid, listing_id, listing_name)
                 service.bid_placed_alert(listing_id, listing_name, prior_bid, highest_bid, bidder, seller)
+                print('you outbid that loser')
                 return create_response(200, field_name="Bid Placed", field_obj=(listing_name, highest_bid))    
     
             elif len(rv) == 7:
                 _, prior_bid, listing_id, listing_name, seller, highest_bid, bidder = rv
                 service.bid_placed_alert(listing_id, listing_name, prior_bid, highest_bid, bidder, seller)
+                print('you outbid yourself!?')
                 return create_response(200, field_name="Bid Placed", field_obj=(listing_name, highest_bid))
 
     @app.route('/view_metrics', methods=["GET"])
@@ -313,14 +315,15 @@ class AuctionService:
         seller = listing['seller_email']
         bid = (bidder, highest_bid, ctime())
         
-        if 'bid_list' not in listing.keys():
-            listing['bid_list'] = []
-        else:
-            prior_leader, prior_bid, _ = listing['bid_list'][0]
-
+        if not listing['bid_list']:
+            bid_list = []
+        elif listing['bid_list']:
+            bid_list = listing['bid_list']
+            prior_leader, prior_bid, _ = bid_list[0]
+        print(bid_list)
         accepted = self.handle_update_listing(listing['seller'], listing, 
                                             {'current_price' : highest_bid, 
-                                            'bid_list': listing['bid_list'].insert(0, bid)})
+                                            'bid_list': bid_list.insert(0, bid)})
         
         #rv = (accepted, get_email_func(prior_leader), prior_bid, listing_id, listing_name, seller, highest_bid, get_email_func(bidder))
 
