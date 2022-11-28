@@ -171,7 +171,6 @@ def create_app(test_config=None):
         window_end = payload['window_end']
 
         req_auctions = service.handle_view_metrics(window_start, window_end)
-        print(req_auctions)
 
         output = []
         for listing in req_auctions:
