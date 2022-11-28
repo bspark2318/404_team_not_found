@@ -54,7 +54,7 @@ def create_app(test_config=None):
     def hello_world():
         return 'Auction Microservice'
     
-    @app.route('/create_listing', methods=["PUT"])
+    @app.route('/create_listing', methods=["POST"])
     def create_listing():
         payload = request.json
         item_details = payload['item_details']
@@ -73,6 +73,7 @@ def create_app(test_config=None):
         listing_id = payload['listing_id']
         listing = service.handle_get_listing(listing_id)
         response = create_response(200 if listing else 404, field_name='listing details', field_obj=listing)
+        return response
 
     @app.route('/delete_listing', methods=["DELETE"])
     def delete_listing():
