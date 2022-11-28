@@ -171,11 +171,16 @@ def create_app(test_config=None):
         window_end = payload['window_end']
 
         req_auctions = service.handle_view_metrics(window_start, window_end)
-        
+        print(req_auctions)
+
+        output = []
+        for listing in req_auctions:
+            del listing['_id']
+            output.append(listing)
+
         return create_response(200 if req_auctions else 404, 
                               field_name=f'{window_start} - {window_end}', 
-                              field_obj=req_auctions)
-
+                              field_obj=output)
 
     def pass_winner(listing_id):
         #Triggered when ctime == end_time
@@ -190,6 +195,8 @@ def create_app(test_config=None):
             'seller_email': listing['seller_email'],
             'item': listing_id
         }
+        t = datetime.strptime(ctime(), "%a %b %d %H:%M:%S %Y")
+        service.handle_update_listing(listing['seller'], listing, {'status': 'complete', 'end_time': t})
 
         # Send these to payout details. BumSu, let me know if payments needs more info
         # What is needed for payment
@@ -313,20 +320,21 @@ class AuctionService:
         listing_name = listing['listing_name']
         listing_id = listing['listing_id']
         seller = listing['seller_email']
-        bid = (bidder, highest_bid, ctime())
+        bid = [bidder, highest_bid, ctime()]
         
         if not listing['bid_list']:
             bid_list = []
         elif listing['bid_list']:
             bid_list = listing['bid_list']
             prior_leader, prior_bid, _ = bid_list[0]
+        bid_list.insert(0, bid)
         print(bid_list)
         accepted = self.handle_update_listing(listing['seller'], listing, 
                                             {'current_price' : highest_bid, 
-                                            'bid_list': bid_list.insert(0, bid)})
+                                            'bid_list': bid_list})
         
         #rv = (accepted, get_email_func(prior_leader), prior_bid, listing_id, listing_name, seller, highest_bid, get_email_func(bidder))
-
+        #print(bid_list)
         if prior_leader and bidder != prior_leader:
             rv = (accepted, prior_leader, prior_bid, listing_id, listing_name, seller, highest_bid, bidder)
         else:
@@ -335,8 +343,10 @@ class AuctionService:
         return rv
             
     def handle_view_metrics(self, window_start, window_end):
-        req_auctions = self.db.find({'end_time' : {'$gte': window_start, '$lte': window_end}})
-        return req_auctions
+        
+        req_auctions = self.db.find({'end_time' : {'$gte': window_start, '$lte': window_end}, 'status': 'complete'})
+        
+        return list(req_auctions)
 
 
     def handle_buyer_outbid_alert(self, auction_title, auction_id, new_bid, old_bid, recipient):
