@@ -1,0 +1,15 @@
+version: "3.7"
+
+services:
+  notification:
+    build: ./notification/.  
+    ports:
+      - "5000:5000"
+  
+  notification_db:
+    image: mongo:latest 
+    ports: 
+      - "27017:27017"
+    container_name: notification_db 
+    volumes: 
+      - /Users/user/data/mongo
