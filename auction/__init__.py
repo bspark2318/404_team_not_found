@@ -72,6 +72,8 @@ def create_app(test_config=None):
         payload = request.json
         listing_id = payload['listing_id']
         listing = service.handle_get_listing(listing_id)
+        if listing:
+            del listing['_id']
         response = create_response(200 if listing else 404, field_name='listing details', field_obj=listing)
         return response
 
