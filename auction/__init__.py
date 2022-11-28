@@ -21,7 +21,7 @@ def create_app(test_config=None):
     load_dotenv()
     
     ## Change this to the docker host//IP ADDRESSS
-    client = MongoClient(host="mongo://db:27017")
+    client = MongoClient(host="db")
     db_conn = client.core
 
     if test_config is None:
