@@ -125,7 +125,8 @@ def create_app(test_config=None):
         payload = request.json
         listing_id = payload['listing_id']
         user = payload['user_id']
-        start, time = service.handle_start_auction(user, listing_id)
+        listing = service.handle_get_listing(listing_id)
+        start, time = service.handle_start_auction(user, listing)
         if start == 'success':
             response = create_response(200, 'auction begun', time)
         elif not start:
@@ -253,7 +254,7 @@ class AuctionService:
             listing_obj = {} 
             dest_source = [("listing_id", 'item_id'), ("listing_name", 'item_name'), ("start_time", 'start_time'), ("starting_price", 'price'),
             ("current_price", 'price'), ("increment", 'increment'), ("description", 'description'), 
-            ("seller", 'user_id'), ("seller_email", 'owner_email'), ("watchers", 'watchers'), ("end_time", 'end_time'), ("endgame", 'endgame')]
+            ("seller", 'user_id'), ("seller_email", 'owner_email'), ("watchers", 'watchers'), ("end_time", 'end_time'), ("endgame", 'endgame'), ("bid_list", 'bid_list')]
             
             for dest, source in dest_source:
                 listing_obj[dest] = item_details[source]
@@ -290,7 +291,7 @@ class AuctionService:
         elif listing['seller'] != user:
             return 'unauthorized'
         else:
-            self.db.update(listing['listing_id'], details)
+            self.db.update_one({'listing_id': listing['listing_id']}, {'$set' : details})
             return 'success'
 
 
@@ -299,8 +300,8 @@ class AuctionService:
         return live_auctions
 
 
-    def handle_start_auction(self, user_id, listing_id, details={'status':'live', 'start_time': ctime()}):
-        start = self.handle_update_listing(user_id, listing_id, details)
+    def handle_start_auction(self, user, listing, details={'status':'live', 'start_time': ctime()}):
+        start = self.handle_update_listing(user, listing, details)
         return (start, ctime())
         # insert method for starting the timer
 
@@ -311,6 +312,8 @@ class AuctionService:
         listing_id = listing['listing_id']
         seller = listing['seller_email']
         bid = (bidder, highest_bid, ctime())
+        if not listing['bid_list']:
+            
         if listing['bid_list']:
             prior_leader, prior_bid, _ = listing['bid_list'][0]
 
