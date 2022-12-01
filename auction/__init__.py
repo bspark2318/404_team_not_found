@@ -9,6 +9,8 @@ from time import ctime, sleep
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.jobstores.mongodb import MongoDBJobStore
 from apscheduler.executors.pool import ThreadPoolExecutor
+from dateutil.relativedelta import relativedelta
+
 
 
 
@@ -30,6 +32,7 @@ def create_app(test_config=None):
     client = MongoClient(connString, 27017)
     db_conn = client.core
 
+    scheduler = BackgroundScheduler({'mongo': MongoDBJobStore()}, {'default': ThreadPoolExecutor(20)}, {'coalesce': False, 'max_instances': 3})
 
 
     if test_config is None:
@@ -46,7 +49,7 @@ def create_app(test_config=None):
     except OSError:
         pass
 
-    service = AuctionService(db_conn)
+    service = AuctionService(db_conn, scheduler)
     
     def create_response(response_code, field_name=None, field_obj=None):
         response_json = {}
@@ -190,21 +193,7 @@ def create_app(test_config=None):
                               field_name=f'{window_start} - {window_end}', 
                               field_obj=output)
 
-    def pass_winner(listing_id):
-        #Triggered when ctime == end_time
-        payload = request.json
-        listing_id = payload['listing_id']
-        listing = service.handle_get_listing(listing_id)
-        winner, amount = listing['bid_list'][0]
-        payout_details = {
-            'winner': winner,
-            'cost': amount,
-            'seller': listing['seller'],
-            'seller_email': listing['seller_email'],
-            'item': listing_id
-        }
-        t = datetime.strptime(ctime(), "%a %b %d %H:%M:%S %Y")
-        service.handle_update_listing(listing['seller'], listing, {'status': 'complete', 'end_time': t})
+
 
         # Send these to payout details. BumSu, let me know if payments needs more info
         # What is needed for payment
@@ -238,8 +227,9 @@ def create_app(test_config=None):
 
 
 class AuctionService:
-    def __init__(self, conn):
+    def __init__(self, conn, scheduler):
         self.db = conn.listings
+        self.scheduler = scheduler
 
     def countdown(self, start, end):
         start = datetime.strptime(start, '%Y-%m-%d %H:%M:%S')
@@ -264,17 +254,27 @@ class AuctionService:
                         
             listing_obj = {} 
             dest_source = [("listing_id", 'item_id'), ("listing_name", 'item_name'), ("start_time", 'start_time'), ("starting_price", 'price'),
-            ("current_price", 'price'), ("increment", 'increment'), ("description", 'description'), 
+            ("current_price", 'price'), ("increment", 'increment'), ("description", 'description'),
             ("seller", 'user_id'), ("seller_email", 'owner_email'), ("watchers", 'watchers'), ("end_time", 'end_time'), ("endgame", 'endgame'), ("bid_list", 'bid_list')]
             
             for dest, source in dest_source:
                 listing_obj[dest] = item_details[source]
-    #  self.handle_start_auction(listing_obj['seller'], listing),
+            
+            listing_obj['start_id'] = str(listing_obj['listing_id']) + 'start'
+            listing_obj['stop_id'] = str(listing_obj['listing_id']) + 'stop'
+            listing_obj['alert_id'] = str(listing_obj['listing_id']) + 'alert'
+
+            starter = listing_obj['start_time']
+
             self.db.insert_one(listing_obj)     
             print("Successful execution")
             listing = self.handle_get_listing(listing_obj['listing_id'])
-            if listing_obj['start_time']:
-                scheduler = BackgroundScheduler({'mongo': MongoDBJobStore()}, {'default': ThreadPoolExecutor(20)}, {'coalesce': False, 'max_instances': 3})
+            if not starter:
+                starter = datetime.today() + relativedelta(days=7)
+                print(f'No start time provided. Default start time is {starter}')
+            job_id = listing_obj['start_id']
+            self.scheduler.add_job(self.handle_start_auction(), trigger='date', run_date=starter, args=[listing_obj['seller'], listing], id=job_id)
+
  
             return listing_obj
             
@@ -296,6 +296,7 @@ class AuctionService:
         elif listing['seller'] != user:
             return 'unauthorized'
         else:
+            self.scheduler.remove_all_jobs()
             self.db.delete_one({'listing_id': listing_id})
             return 'success'
 
@@ -306,6 +307,11 @@ class AuctionService:
         elif listing['seller'] != user:
             return 'unauthorized'
         else:
+            time_mods = [details['start_time'], listing['stop_id'], listing['alert_id']]
+            for mod in time_mods:
+                if mod:
+                    job_id = mod
+                    self.scheduler.reschedule_job(job_id, trigger='date', run_date=mod)
             self.db.update_one({'listing_id': listing['listing_id']}, {'$set' : details})
             return 'success'
 
@@ -315,10 +321,44 @@ class AuctionService:
         return live_auctions
 
 
-    def handle_start_auction(self, user, listing, details={'status':'live', 'start_time': ctime()}):
+    def handle_start_auction(self, user, listing,
+                            details={'status':'live', 'start_time': ctime()}):
+
         start = self.handle_update_listing(user, listing, details)
+
+        stopper = listing['end_time']
+        if not stopper:
+            stopper = datetime.today()+ relativedelta(months=1)
+            print(f'Default auction length is 1 month, this auction will end on {stopper}')
+
+
+        endgame = listing['endgame']
+        if not endgame:
+            endgame = stopper - relativedelta(days=1)
+            print('No endgame provided. Default endgame is 1 day prior to end of auction')
+
+        high_bid = listing['bid_list'][0][1]
+        endgame_args = [listing['listing_id'], listing['listing_name'],
+                    high_bid, stopper, listing['bid_list'],
+                    listing['watchers'], listing['seller']]
+        
+        job_id = listing['stop_id']
+        self.scheduler.add_job(self.handle_stop_auction(), trigger='date', run_date=stopper, args=[user, listing], id=job_id)
+        
+        job_id = listing['alert_id']
+        self.scheduler.add_job(self.end_game_alert, trigger='date',run_date=endgame, args=endgame_args, id=job_id)
+        
         return (start, ctime())
+            
+
         # insert method for starting the timer
+
+    
+    def handle_stop_auction(self, user, listing, details={'status':'complete', 'end_time': ctime()}):
+        stop = self.handle_update_listing(user, listing, details)
+        self.pass_winner(listing['listing_id'])
+        return (stop, ctime())
+
 
     def handle_bids(self, bidder, highest_bid, listing):
         prior_leader = None
@@ -353,6 +393,19 @@ class AuctionService:
         req_auctions = self.db.find({'end_time' : {'$gte': window_start, '$lte': window_end}, 'status': 'complete'})
         
         return list(req_auctions)
+
+    def pass_winner(self, listing_id):
+        winner, amount = self.bid_list[0]
+        listing = self.handle_get_listing(listing_id)
+        payout_details = {
+            'winner': winner,
+            'cost': amount,
+            'seller': listing.seller,
+            'seller_email': listing.seller_email,
+            'item': listing.listing_id
+        }
+        #send this to payment processing
+        return payout_details
 
 
     def handle_buyer_outbid_alert(self, auction_title, auction_id, new_bid, old_bid, recipient):
@@ -512,13 +565,12 @@ class AuctionService:
         return True 
 
 
-    def end_game_alert(self, listing_id, listing_name, prior_bid, amount, e_time, bidders, watchers, seller):
+    def end_game_alert(self, listing_id, listing_name, amount, e_time, bidders, watchers, seller):
         
         post_body = {}
         post_body["auction_title"] = listing_name
         post_body["auction_id"] = listing_id
         post_body["current_bid"] = amount
-        post_body["old_bid"] = prior_bid
         dt = datetime.now()
         post_body["timestamp"] = datetime.timestamp(dt)
         post_body["end_time"] = e_time
