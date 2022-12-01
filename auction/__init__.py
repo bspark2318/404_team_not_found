@@ -1,13 +1,17 @@
 import os
 from dotenv  import load_dotenv
 from datetime import datetime 
-import time 
 import sys
 from flask import Flask, Response, request, make_response, jsonify, json, abort
 import requests
 from pymongo import MongoClient
 from time import ctime, sleep
 from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.jobstores.mongodb import MongoDBJobStore
+from apscheduler.executors.pool import ThreadPoolExecutor
+
+
+
 
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
@@ -25,7 +29,6 @@ def create_app(test_config=None):
     ## Change this to the docker host//IP ADDRESSS
     client = MongoClient(connString, 27017)
     db_conn = client.core
-    print(client)
 
 
 
@@ -229,14 +232,9 @@ def create_app(test_config=None):
 
         return payout_details
 
-    
-    
 
 
     return app
-
-    
-        
 
 
 class AuctionService:
@@ -257,7 +255,6 @@ class AuctionService:
         
         return True
 
-
     
     def handle_create_listing(self, item_details):
         
@@ -272,9 +269,13 @@ class AuctionService:
             
             for dest, source in dest_source:
                 listing_obj[dest] = item_details[source]
-            
-            self.db.insert_one(listing_obj)
+    #  self.handle_start_auction(listing_obj['seller'], listing),
+            self.db.insert_one(listing_obj)     
             print("Successful execution")
+            listing = self.handle_get_listing(listing_obj['listing_id'])
+            if listing_obj['start_time']:
+                scheduler = BackgroundScheduler({'mongo': MongoDBJobStore()}, {'default': ThreadPoolExecutor(20)}, {'coalesce': False, 'max_instances': 3})
+ 
             return listing_obj
             
         except Exception as e:
