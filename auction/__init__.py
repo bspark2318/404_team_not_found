@@ -1,18 +1,15 @@
 import os
+import sys
+import time
+import requests
 from dotenv  import load_dotenv
 from datetime import datetime 
-import sys
 from flask import Flask, Response, request, make_response, jsonify, json, abort
-import requests
 from pymongo import MongoClient
-from time import ctime, sleep
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.jobstores.mongodb import MongoDBJobStore
 from apscheduler.executors.pool import ThreadPoolExecutor
 from dateutil.relativedelta import relativedelta
-
-
-
 
 
 def create_app(test_config=None):
@@ -167,13 +164,11 @@ def create_app(test_config=None):
 
                 service.alert_out_bid(prior_leader, prior_bid, highest_bid, listing_id, listing_name)
                 service.bid_placed_alert(listing_id, listing_name, prior_bid, highest_bid, bidder, seller)
-                print('you outbid that loser')
                 return create_response(200, field_name="Bid Placed", field_obj=(listing_name, highest_bid))    
     
             elif len(rv) == 7:
                 _, prior_bid, listing_id, listing_name, seller, highest_bid, bidder = rv
                 service.bid_placed_alert(listing_id, listing_name, prior_bid, highest_bid, bidder, seller)
-                print('you outbid yourself!?')
                 return create_response(200, field_name="Bid Placed", field_obj=(listing_name, highest_bid))
 
     @app.route('/view_metrics', methods=["GET"])
@@ -227,30 +222,18 @@ def create_app(test_config=None):
 
 
 class AuctionService:
+
     def __init__(self, conn, scheduler):
         self.db = conn.listings
         self.scheduler = scheduler
-
-    def countdown(self, start, end):
-        start = datetime.strptime(start, '%Y-%m-%d %H:%M:%S')
-        end = datetime.strptime(end, '%Y-%m-%d %H:%M:%S')
-        time = end - start
-        time = time.total_seconds()
-        while time:
-            mins, secs = divmod(time, 60)
-            # timer = '{:02d}:{:02d}'.format(mins, secs)
-            sleep(1)
-            time -= 1
-            print(time)
-        
-        return True
 
     
     def handle_create_listing(self, item_details):
         
         try:
-            res = self.db.find({"listing_id": item_details["item_id"]})
-            ## Handle this later. Check if already exists
+            res = self.db.find_one({"listing_id": item_details["item_id"]})
+            if res:
+                return None
                         
             listing_obj = {} 
             dest_source = [("listing_id", 'item_id'), ("listing_name", 'item_name'), ("start_time", 'start_time'), ("starting_price", 'price'),
@@ -267,7 +250,6 @@ class AuctionService:
             starter = listing_obj['start_time']
 
             self.db.insert_one(listing_obj)     
-            print("Successful execution")
             listing = self.handle_get_listing(listing_obj['listing_id'])
             if not starter:
                 starter = datetime.today() + relativedelta(days=7)
@@ -275,7 +257,7 @@ class AuctionService:
             job_id = listing_obj['start_id']
             self.scheduler.add_job(self.handle_start_auction(), trigger='date', run_date=starter, args=[listing_obj['seller'], listing], id=job_id)
 
- 
+            print("Successful execution")
             return listing_obj
             
         except Exception as e:
@@ -290,13 +272,16 @@ class AuctionService:
         
 
     def handle_delete_listing(self, listing_id, user):
-        listing = self.handle_get_listing(listing_id)
+        listing = self.db.find_one({'listing_id': listing_id})
         if not listing:
             return None
         elif listing['seller'] != user:
             return 'unauthorized'
         else:
-            self.scheduler.remove_all_jobs()
+            jobs = [listing['start_id'], listing['stop_id'], listing['alert_id']]
+            for job in jobs:
+                if job:    
+                    self.scheduler.remove_job(job)
             self.db.delete_one({'listing_id': listing_id})
             return 'success'
 
@@ -307,10 +292,11 @@ class AuctionService:
         elif listing['seller'] != user:
             return 'unauthorized'
         else:
-            time_mods = [details['start_time'], listing['stop_id'], listing['alert_id']]
-            for mod in time_mods:
+            time_mods = [details['start_time'], listing['end_time'], listing['endgame']]
+            jobs = [listing['start_id'], listing['stop_id'], listing['alert_id']]
+            for i, mod in enumerate(time_mods):
                 if mod:
-                    job_id = mod
+                    job_id = jobs[i]
                     self.scheduler.reschedule_job(job_id, trigger='date', run_date=mod)
             self.db.update_one({'listing_id': listing['listing_id']}, {'$set' : details})
             return 'success'
@@ -322,20 +308,20 @@ class AuctionService:
 
 
     def handle_start_auction(self, user, listing,
-                            details={'status':'live', 'start_time': ctime()}):
+                            details={'status':'live', 'start_time': datetime.today()}):
 
         start = self.handle_update_listing(user, listing, details)
 
         stopper = listing['end_time']
         if not stopper:
-            stopper = datetime.today()+ relativedelta(months=1)
+            stopper = datetime.today() + relativedelta(months=1)
             print(f'Default auction length is 1 month, this auction will end on {stopper}')
 
 
         endgame = listing['endgame']
         if not endgame:
             endgame = stopper - relativedelta(days=1)
-            print('No endgame provided. Default endgame is 1 day prior to end of auction')
+            print('No endgame provided. Default endgame alert is sent 1 day prior to end of auction')
 
         high_bid = listing['bid_list'][0][1]
         endgame_args = [listing['listing_id'], listing['listing_name'],
@@ -348,16 +334,13 @@ class AuctionService:
         job_id = listing['alert_id']
         self.scheduler.add_job(self.end_game_alert, trigger='date',run_date=endgame, args=endgame_args, id=job_id)
         
-        return (start, ctime())
-            
-
-        # insert method for starting the timer
+        return (start, datetime.today())
 
     
-    def handle_stop_auction(self, user, listing, details={'status':'complete', 'end_time': ctime()}):
+    def handle_stop_auction(self, user, listing, details={'status':'complete', 'end_time': datetime.today()}):
         stop = self.handle_update_listing(user, listing, details)
         self.pass_winner(listing['listing_id'])
-        return (stop, ctime())
+        return (stop, datetime.today())
 
 
     def handle_bids(self, bidder, highest_bid, listing):
@@ -366,7 +349,7 @@ class AuctionService:
         listing_name = listing['listing_name']
         listing_id = listing['listing_id']
         seller = listing['seller_email']
-        bid = [bidder, highest_bid, ctime()]
+        bid = [bidder, highest_bid, datetime.today()]
         
         if not listing['bid_list']:
             bid_list = []
