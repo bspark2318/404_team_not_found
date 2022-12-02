@@ -18,9 +18,6 @@ def create_app(test_config=None):
         SECRET_KEY='dev',
         DATABASE=os.path.join(app.instance_path, 'flaskr.sqlite'),
     )
-
-    #
-    ## Make the database right here
     
     load_dotenv()
     connString = os.environ['MONGODB_CONNSTRING']
@@ -29,7 +26,8 @@ def create_app(test_config=None):
     client = MongoClient(connString, 27017)
     db_conn = client.core
 
-    scheduler = BackgroundScheduler(jobstores={'mongo': MongoDBJobStore()}, executors={'default': ThreadPoolExecutor(20)}, job_defaults={'coalesce': False, 'max_instances': 3})
+    scheduler = BackgroundScheduler(jobstores={'mongo': MongoDBJobStore(client=client)}, executors={'default': ThreadPoolExecutor(20)}, job_defaults={'coalesce': False, 'max_instances': 3},timezone='America/Chicago')
+    scheduler.start()
 
 
     if test_config is None:
@@ -72,10 +70,10 @@ def create_app(test_config=None):
         if listing:
             del listing['_id']
             #response = create_response( 201 if listing else 400 , field_name="listing_details", field_obj=listing)
-            print('new listing baby')
+            print('new listing baby', flush=True)
             response = create_response(201, field_name="listing_details", field_obj=listing)
         else:
-            print('already existed')
+            print('that already existed', flush=True)
             response = create_response(400)
         return response
     
@@ -85,7 +83,7 @@ def create_app(test_config=None):
         payload = request.json
         listing_id = payload['listing_id']
         listing = service.handle_get_listing(listing_id)
-        if listing:
+        if listing and type(listing) != list:
             del listing['_id']
         response = create_response(200 if listing else 404, field_name='listing details', field_obj=listing)
         return response
@@ -128,7 +126,10 @@ def create_app(test_config=None):
     @app.route('/view_live', methods=["GET"])
     def view_live():
         live_auctions = service.handle_view_live()
-        response = create_response(200 if live_auctions else 400, 
+        if live_auctions:
+            for listing in live_auctions:
+                del listing['_id']
+        response = create_response(200 if live_auctions else 404, 
                     field_name='Live Auctions', field_obj=live_auctions)
 
         return response
@@ -237,7 +238,6 @@ class AuctionService:
         try:
             res = self.db.find_one({"listing_id": item_details["item_id"]})
             if res:
-                print('This already exists')
                 return None
                         
             listing_obj = {} 
@@ -253,17 +253,17 @@ class AuctionService:
             listing_obj['alert_id'] = str(listing_obj['listing_id']) + 'alert'
             listing_obj['status'] = 'prep'
 
-            starter = listing_obj['start_time']
+            starter = datetime.strptime(listing_obj['start_time'], '%Y-%m-%d %H:%M:%S')
 
             self.db.insert_one(listing_obj)     
             listing = self.handle_get_listing(listing_obj['listing_id'])
             if not starter:
                 starter = datetime.today() + relativedelta(days=7)
-                print(f'No start time provided. Default start time is {starter}')
+                print(f'No start time provided. Default start time is {starter.strftime("%Y-%m-%d %H:%M:%S")}', flush=True)
             job_id = listing_obj['start_id']
-            self.scheduler.add_job(self.handle_start_auction, trigger='date', run_date=starter, args=[listing_obj['seller'], listing], id=job_id)
-            self.scheduler.start()
-            print("Successful execution")
+            self.scheduler.add_job(self.handle_start_auction, 'date', run_date=starter, args=[listing_obj['seller'], listing], id=job_id)
+            # self.scheduler.start()
+            print("Successful execution", flush=True)
             return listing_obj
             
         except Exception as e:
@@ -274,7 +274,15 @@ class AuctionService:
     def handle_get_listing(self, listing_id):
         '''
         '''
-        return self.db.find_one({'listing_id': listing_id})
+        if listing_id:
+            return self.db.find_one({'listing_id': listing_id})
+        else:
+            output = []
+            all_listings = self.db.find({})
+            for listing in all_listings:
+                del listing['_id']
+                output.append(listing)
+            return output
         
 
     def handle_delete_listing(self, listing_id, user):
@@ -299,54 +307,60 @@ class AuctionService:
         elif listing['seller'] != user:
             return 'unauthorized'
         else:
-            time_mods = [details['start_time'], listing['end_time'], listing['endgame']]
+            time_mods = []
+            keys = ['start_time','end_time','endgame']
+            for k in keys:
+                if k in details.keys():
+                    time_mods.append(details[k])        
+
             jobs = [listing['start_id'], listing['stop_id'], listing['alert_id']]
             for i, mod in enumerate(time_mods):
-                if mod:
-                    job_id = jobs[i]
-                    self.scheduler.reschedule_job(job_id, trigger='date', run_date=mod)
+                job_id = jobs[i]
+                self.scheduler.reschedule_job(job_id, 'date', run_date=mod)
+            
             self.db.update_one({'listing_id': listing['listing_id']}, {'$set' : details})
+            print('UPDATING', flush=True)
             return 'success'
 
 
     def handle_view_live(self):
-        live_auctions = list(self.db.find({'live': True}))
+        live_auctions = list(self.db.find({'status': 'live'}))
         return live_auctions
 
 
     def handle_start_auction(self, user, listing,
-                            details={'status':'live', 'start_time': datetime.today()}):
+                            details={'status':'live'}):
 
         start = self.handle_update_listing(user, listing, details)
 
         stopper = listing['end_time']
         if not stopper:
             stopper = datetime.today() + relativedelta(months=1)
-            print(f'Default auction length is 1 month, this auction will end on {stopper}')
+            print(f'Default auction length is 1 month, this auction will end on {stopper.strftime("%Y-%m-%d %H:%M:%S")}', flush=True)
+        else:
+            stopper = datetime.strptime(stopper, '%Y-%m-%d %H:%M:%S')
 
 
         endgame = listing['endgame']
         if not endgame:
             endgame = stopper - relativedelta(days=1)
-            print('No endgame provided. Default endgame alert is sent 1 day prior to end of auction')
-
-        high_bid = listing['bid_list'][0][1]
-        endgame_args = [listing['listing_id'], listing['listing_name'],
-                    high_bid, stopper, listing['bid_list'],
-                    listing['watchers'], listing['seller']]
+            print('No endgame provided. Default endgame alert is sent 1 day prior to end of auction', flush=True)
+        else:
+            delta = stopper - datetime.strptime(endgame, '%Y-%m-%d %H:%M:%S')
+            endgame = stopper - delta
         
         job_id = listing['stop_id']
-        self.scheduler.add_job(self.handle_stop_auction, trigger='date', run_date=stopper, args=[user, listing], id=job_id)
-        self.scheduler.start()
+        self.scheduler.add_job(self.handle_stop_auction, 'date', run_date=stopper, args=[user, listing], id=job_id)
+        # self.scheduler.start()
         
         job_id = listing['alert_id']
-        self.scheduler.add_job(self.end_game_alert, trigger='date',run_date=endgame, args=endgame_args, id=job_id)
-        self.scheduler.start()
+        self.scheduler.add_job(self.end_game_alert, 'date',run_date=endgame, args=[listing], id=job_id)
+        # self.scheduler.start()
         
         return (start, datetime.today())
 
     
-    def handle_stop_auction(self, user, listing, details={'status':'complete', 'end_time': datetime.today()}):
+    def handle_stop_auction(self, user, listing, details={'status':'complete'}):
         stop = self.handle_update_listing(user, listing, details)
         self.pass_winner(listing['listing_id'])
         return (stop, datetime.today())
@@ -384,15 +398,19 @@ class AuctionService:
         return list(req_auctions)
 
     def pass_winner(self, listing_id):
-        winner, amount = self.bid_list[0]
         listing = self.handle_get_listing(listing_id)
         payout_details = {
-            'winner': winner,
-            'cost': amount,
-            'seller': listing.seller,
-            'seller_email': listing.seller_email,
-            'item': listing.listing_id
-        }
+                'winner': None,
+                'cost': None,
+                'seller': listing['seller'],
+                'seller_email': listing['seller_email'],
+                'item': listing['listing_id']
+            }
+        if listing['bid_list']:
+            winner, amount, _ = listing['bid_list'][0]
+            payout_details['winner'] = winner
+            payout_details['cost'] = amount
+        
         #send this to payment processing
         return payout_details
 
@@ -554,16 +572,19 @@ class AuctionService:
         return True 
 
 
-    def end_game_alert(self, listing_id, listing_name, amount, e_time, bidders, watchers, seller):
+    def end_game_alert(self, listing,):
         
         post_body = {}
-        post_body["auction_title"] = listing_name
-        post_body["auction_id"] = listing_id
-        post_body["current_bid"] = amount
+        post_body["auction_title"] = listing["listing_name"]
+        post_body["auction_id"] = listing["listing_id"]
+        if listing['bid_list']:
+            post_body["current_bid"] = listing["bid_list"][0][1]
+        else:
+            post_body["current_bid"] = 0
         dt = datetime.now()
         post_body["timestamp"] = datetime.timestamp(dt)
-        post_body["end_time"] = e_time
-        post_body["recipient"] = watchers
+        post_body["end_time"] = listing['end_time']
+        post_body["recipient"] = listing["watchers"]
         
         ## Do we need to implement this through async pub sub?
         ## Will need to change the URL later on
