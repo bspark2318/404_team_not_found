@@ -143,7 +143,7 @@ def CreateItem():
         item_weight = -1
     else:
         try:
-            item_weight = float(request.args.get('item_price'))
+            item_weight = float(request.args.get('item_weight'))
         except ValueError:
             return jsonify({
                 "status_code": "400",

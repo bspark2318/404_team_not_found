@@ -1,0 +1,30 @@
+syntax = "proto3";
+package items;
+
+service Items {
+  rpc Search_ItemID (Search_ItemID_request) returns (Search_ItemID_response) {}
+}
+
+message Item{
+  string item_id = 1;
+  string item_name = 2;
+  string item_price = 3;
+  string item_description = 4;
+  string item_weight = 5;
+  string item_categories = 6;
+
+  // item_name: self.item_name,
+  // "item_price": self.item_price,
+  // "item_description": self.item_description,
+  // "item_weight": self.item_weight,
+  // "item_categories": self.item_categories
+}
+
+message Search_ItemID_request {
+  string item_id = 1;
+}
+
+
+message Search_ItemID_response {
+  Item item_id = 1;
+}

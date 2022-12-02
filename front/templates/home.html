@@ -1,0 +1,155 @@
+<html>
+    <h2>404 Online Auction House!</h2>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+        body {font-family: Arial, Helvetica, sans-serif;}
+        /* form {border: 3px solid #f1f1f1;} */
+        
+        input[type=text], input[type=password] {
+          width: 100%;
+          padding: 12px 20px;
+          margin: 8px 0;
+          display: inline-block;
+          border: 1px solid #ccc;
+          box-sizing: border-box;
+        }
+        
+        button[name="item"] {
+          background-color: #04AA6D;
+          color: white;
+          padding: 14px 20px;
+          margin: 8px 0;
+          border: none;
+          cursor: pointer;
+          width: 100%;
+        }
+        
+        button[name="item"]:hover {
+          opacity: 0.8;
+        }
+
+        button[name="user_admin"] {
+          background-color: #4f04aa;
+          color: white;
+          padding: 14px 20px;
+          margin: 8px 0;
+          border: none;
+          cursor: pointer;
+          width: 100%;
+          float: right;
+        }
+        
+        button[name="user_admin"]:hover {
+          opacity: 0.8;
+        }
+
+        button[name="cart_auction"] {
+          background-color: #ebe40b;
+          color: white;
+          padding: 14px 20px;
+          margin: 8px 0;
+          border: none;
+          cursor: pointer;
+          width: 100%;
+          float: right;
+        }
+        
+        button[name="cart_auction"]:hover {
+          opacity: 0.8;
+        }
+        
+        button[name="search"] {
+          background-color: #f44336;
+          color: white;
+          padding: 14px 20px;
+          margin: 8px 0;
+          border: none;
+          cursor: pointer;
+          width: 100%;
+        }
+        
+        button[name="search"]:hover {
+          opacity: 0.8;
+        }
+
+        .container{
+          padding: 16px;
+        }
+
+        .column {
+        float: left;
+        padding: 10px;
+        }
+
+        .left, .right {
+        width: 32%;
+        }
+
+        .middle {
+        width: 32%;
+        }
+
+        .row:after {
+        content: "";
+        display: table;
+        clear: both;
+        }
+        
+        </style>
+        </head>
+        <body>
+        
+        <h3>Home</h3>
+        
+        <div class="container", name="search_bar">
+            <button name="search">Search Portal</button>
+        </div>
+
+        <div class="container", name="search_bar">
+            <button name="search">Auction Portal</button>
+        </div>
+
+        <div class="row">
+            <div class="column left">
+                <div class="container">
+                    <button name="item">Create Item</button>
+                    <button name="item">Modify Item</button>
+                    <button name="item">Delete Item</button>
+                    <button name="item">Categorize</button>
+                </div>
+            </div>
+
+            <div class="column middle">
+                <div class="container">
+                    <form action="/action_page.php" method="post">   <!-- post api-->
+                            <label for="itemId"><b>Enter Item ID and perform one of the operations:</b></label>
+                            <input type="text" placeholder="Enter Item ID" name="itemId" required>
+                            <button name="cart_auction">Add to Cart</button>
+                            <button name="cart_auction">Delete from Cart</button>
+                            <button name="cart_auction">Add to Watchlist</button>
+                            <button name="cart_auction">Delete from Watchlist</button>
+                            <button name="cart_auction">Add for Auction</button> 
+                            <button name="cart_auction">Flag Item</button>              
+                    </form>
+                </div>
+            </div>
+
+            <div class="column right">
+                <div class="container">
+                    <button name="user_admin">View Cart</button>
+                    <button name="user_admin">View Watchlist</button>
+                    <button name="user_admin">Look up User</button>
+                    <button name="user_admin">Update User</button>
+                    <button name="user_admin">Delete User</button>
+                    <!-- <button name="user_admin">View Bids</button> -->
+                    <button name="user_admin">Receive Customer Support</button>
+                    <!-- if user_id.status == "admin" -->
+                    <!-- <button name="user_admin">Suspend User</button> ###########3input button -->
+                    <button name="user_admin">Log out</button>
+                </div>
+            </div>
+        </div>
+
+        </body>
+</html>
