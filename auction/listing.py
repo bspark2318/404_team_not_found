@@ -6,6 +6,7 @@ from time import ctime
 
 class Listing(mongoengine.Document):
     listing_id = mongoengine.IntField(required=True)
+    listing_name = item_details['item_name']
     start_time = mongoengine.DateTimeField(required=True)
     end_time = mongoengine.DateTimeField()
     endgame = mongoengine.IntField(default=10)
@@ -26,7 +27,7 @@ class Listing(mongoengine.Document):
     }
 
 
-    def start_auction(self):
+    def start_auction(self): ###
         '''
         '''
 
@@ -40,30 +41,29 @@ class Listing(mongoengine.Document):
         #whatever function starts the clock
 
 
-    def take_bid(self, bidder, amount):
+    def take_bid(self, bidder, highest_bid): ###
         '''
         '''
         assert self.status == 'live', f'This auction has not started'
-        assert amount >= self.current_price + self.increment, f'Bid total less than increment, minimum acceptable bid is: {self.current_price + self.increment}'
-        
-        current_leader = None
-        bid = (bidder, amount, ctime())
+        assert highest_bid >= self.current_price + self.increment, f'Bid total less than increment, minimum acceptable bid is: {self.current_price + self.increment}'
+        # get email addresses for sellers/buyers
+        prior_leader = None
+        bid = (bidder, highest_bid, ctime())
 
         if self.bid_list:
-            current_leader, _, __ = self.bid_list[0]
+            prior_leader, prior_bid, __ = self.bid_list[0]
 
-        self.current_price = amount
+        self.current_price = highest_bid
         self.bid_list.insert(0, bid)
 
         rep.update_listing(self.seller, self.listing_id, {'current_price':self.current_price, 'bid_list': self.bid_list})
     
 
-        if current_leader and bidder != current_leader: # New highest bidder
-            self.outbid_alert(current_leader, amount)
-        self.bid_placed_alert(amount)
-            #return 201, f'hi bidder,bid placed at {amount}. hi seller, your auction {self.listing_id} received a bid of {amount}' # Replace with ACTUAL IMPLEMENTATION
+        if prior_leader and bidder != prior_leader: # New highest bidder
+            self.outbid_alert(prior_leader, prior_bid, highest_bid, self.listing_id, self.listing_name)
+        self.bid_placed_alert(self.listing_id, self.listing_name, highest_bid)
         
-        return 201, f'hi seller, your auction {self.listing_id} received a bid of {amount}'
+        return 201, f'hi seller, your auction {self.listing_id} received a bid of {highest_bid}'
 
 
     def pass_winner(self):
@@ -83,7 +83,7 @@ class Listing(mongoengine.Document):
         return 200, payout_details  # Replace with ACTUAL IMPLEMENTATION
     
 
-    def outbid_alert(self, recipient, new_highest):
+    def outbid_alert(self, recipient, new_highest): ###
         '''
         '''
         message = f'''
@@ -93,8 +93,8 @@ class Listing(mongoengine.Document):
         return 200, (recipient, message) # Replace with ACTUAL IMPLEMENTATION
 
 
-    def bid_placed_alert(self, new_highest):
-        '''
+    def bid_placed_alert(self, new_highest): ###
+        ''' 
         '''
 
         message = f'''
@@ -106,7 +106,7 @@ class Listing(mongoengine.Document):
         return 200, self.seller, message  # Replace with ACTUAL IMPLEMENTATION
 
 
-    def endgame_alert(self):
+    def endgame_alert(self): ###
         '''
         '''
         recipients = set(self.watchers)
@@ -122,8 +122,8 @@ class Listing(mongoengine.Document):
         return 200, recipients, message  # Replace with ACTUAL IMPLEMENTATION
 
 
-        def __repr__(self):
-            '''
-            '''
-            return f'{dict(self.to_mongo())}'
-            #return f'Listing Number: {self.listing_id} contains {self.description}.'
+def __repr__(self):
+    '''
+    '''
+    return f'{dict(self.to_mongo())}'
+    #return f'Listing Number: {self.listing_id} contains {self.description}.'

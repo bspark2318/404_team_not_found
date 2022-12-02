@@ -1,10 +1,12 @@
-FROM mpcsfinal
+FROM python:3.8
 
-WORKDIR /auctions
+WORKDIR C:/Users/cvg11/Desktop/404_team_not_found/auction
 
 COPY . .
 
-RUN pip3 install --upgrade pip
-RUN pip3 install -r requirements.txt
+RUN pip install --upgrade pip
+RUN pip install -r requirements.txt
 
-CMD ["echo", "You ran me, I'm here!"]
+EXPOSE 5000
+
+CMD ["flask", "--app", "__init__.py", "run", "--host", "0.0.0.0"]
