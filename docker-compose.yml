@@ -1,6 +1,7 @@
 version: "3.7"
 
 services:
+
   notification:
     build: ./notification/.  
     container_name: notification_service
@@ -15,6 +16,74 @@ services:
       - "27017:27017"
     container_name: notification_db 
     volumes: 
-      - /Users/user/data/mongo
+      - /Users/user/data/mongo/notification
 
+  # payment:
+  #   build: ./payment/.  
+  #   container_name: payment_service
+  #   environment: 
+  #     - POSTGRESQL_CONNSTRING=postgres://payment_db
+  #   ports:
+  #     - "5001:5000"
+  
+  # payment_db:
+  #   image: postgres
+  #   ports: 
+  #     - "27018:27017"
+  #   container_name: payment_db 
+  #   volumes: 
+  #     - /Users/user/data/psql/payment
+
+  itemservice:
+    build: ./item/.
+    container_name: item_service
+    environment:
+      - MONGODB_CONNSTRING=mongodb://item_db
+    ports:
+      - "5002:5000"
+    networks:
+      default:
+        aliases:
+          - service.item
+
+  item_mongodb:
+    image: mongo:latest
+    ports:
+      - "27019:27017"
+    container_name: item_db 
+    volumes: 
+      - /Users/user/data/mongo/item
+
+  user:
+    build: ./user/.
+    container_name: user_service
+    environment:
+      - MONGODB_CONNSTRING=mongodb://user_db
+    ports:
+      - "5003:5000"
+
+  user_mongodb:
+    image: mongo:latest
+    ports:
+      - "27020:27017"
+    container_name: user_db
+    volumes:
+      - /Users/user/data/mongo/user
+
+
+  # auction:
+  #   build: ./auction/.
+  #   container_name: auction_service
+  #   environment: 
+  #     - MONGODB_CONNSTRING=mongodb://auction_db
+  #   ports:
+  #     - "5004:5000"
+
+  # auction_db:
+  #   image: mongo:latest
+  #   container_name: auction_db
+  #   ports:
+  #     - "27021:27017"
+  #   volumes:
+  #     - /Users/user/data/mongo/auction
 
