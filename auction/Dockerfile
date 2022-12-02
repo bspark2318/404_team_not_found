@@ -4,7 +4,6 @@ WORKDIR C:/Users/cvg11/Desktop/404_team_not_found/auction
 
 COPY . .
 
-RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 
 EXPOSE 5000

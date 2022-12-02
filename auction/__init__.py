@@ -29,7 +29,7 @@ def create_app(test_config=None):
     client = MongoClient(connString, 27017)
     db_conn = client.core
 
-    scheduler = BackgroundScheduler({'mongo': MongoDBJobStore()}, {'default': ThreadPoolExecutor(20)}, {'coalesce': False, 'max_instances': 3})
+    scheduler = BackgroundScheduler(jobstores={'mongo': MongoDBJobStore()}, executors={'default': ThreadPoolExecutor(20)}, job_defaults={'coalesce': False, 'max_instances': 3})
 
 
     if test_config is None:
@@ -71,8 +71,12 @@ def create_app(test_config=None):
         listing = service.handle_create_listing(item_details)
         if listing:
             del listing['_id']
-        
-        response = create_response( 201 if listing else 400 , field_name="listing_details", field_obj=listing)
+            #response = create_response( 201 if listing else 400 , field_name="listing_details", field_obj=listing)
+            print('new listing baby')
+            response = create_response(201, field_name="listing_details", field_obj=listing)
+        else:
+            print('already existed')
+            response = create_response(400)
         return response
     
 
@@ -233,6 +237,7 @@ class AuctionService:
         try:
             res = self.db.find_one({"listing_id": item_details["item_id"]})
             if res:
+                print('This already exists')
                 return None
                         
             listing_obj = {} 
@@ -246,6 +251,7 @@ class AuctionService:
             listing_obj['start_id'] = str(listing_obj['listing_id']) + 'start'
             listing_obj['stop_id'] = str(listing_obj['listing_id']) + 'stop'
             listing_obj['alert_id'] = str(listing_obj['listing_id']) + 'alert'
+            listing_obj['status'] = 'prep'
 
             starter = listing_obj['start_time']
 
@@ -255,8 +261,8 @@ class AuctionService:
                 starter = datetime.today() + relativedelta(days=7)
                 print(f'No start time provided. Default start time is {starter}')
             job_id = listing_obj['start_id']
-            self.scheduler.add_job(self.handle_start_auction(), trigger='date', run_date=starter, args=[listing_obj['seller'], listing], id=job_id)
-
+            self.scheduler.add_job(self.handle_start_auction, trigger='date', run_date=starter, args=[listing_obj['seller'], listing], id=job_id)
+            self.scheduler.start()
             print("Successful execution")
             return listing_obj
             
@@ -280,8 +286,9 @@ class AuctionService:
         else:
             jobs = [listing['start_id'], listing['stop_id'], listing['alert_id']]
             for job in jobs:
-                if job:    
-                    self.scheduler.remove_job(job)
+                if job:
+                    if job in self.scheduler.get_jobs():
+                        self.scheduler.remove_job(job)
             self.db.delete_one({'listing_id': listing_id})
             return 'success'
 
@@ -303,7 +310,7 @@ class AuctionService:
 
 
     def handle_view_live(self):
-        live_auctions = self.db.find({'live': True})
+        live_auctions = list(self.db.find({'live': True}))
         return live_auctions
 
 
@@ -329,10 +336,12 @@ class AuctionService:
                     listing['watchers'], listing['seller']]
         
         job_id = listing['stop_id']
-        self.scheduler.add_job(self.handle_stop_auction(), trigger='date', run_date=stopper, args=[user, listing], id=job_id)
+        self.scheduler.add_job(self.handle_stop_auction, trigger='date', run_date=stopper, args=[user, listing], id=job_id)
+        self.scheduler.start()
         
         job_id = listing['alert_id']
         self.scheduler.add_job(self.end_game_alert, trigger='date',run_date=endgame, args=endgame_args, id=job_id)
+        self.scheduler.start()
         
         return (start, datetime.today())
 
@@ -357,13 +366,10 @@ class AuctionService:
             bid_list = listing['bid_list']
             prior_leader, prior_bid, _ = bid_list[0]
         bid_list.insert(0, bid)
-        print(bid_list)
         accepted = self.handle_update_listing(listing['seller'], listing, 
                                             {'current_price' : highest_bid, 
                                             'bid_list': bid_list})
         
-        #rv = (accepted, get_email_func(prior_leader), prior_bid, listing_id, listing_name, seller, highest_bid, get_email_func(bidder))
-        #print(bid_list)
         if prior_leader and bidder != prior_leader:
             rv = (accepted, prior_leader, prior_bid, listing_id, listing_name, seller, highest_bid, bidder)
         else:
