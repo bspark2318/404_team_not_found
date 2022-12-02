@@ -125,7 +125,8 @@ def create_app(test_config=None):
 
     @app.route('/view_live', methods=["GET"])
     def view_live():
-        live_auctions = service.handle_view_live()
+        sort = request
+        live_auctions = service.handle_view_live(sort)
         if live_auctions:
             for listing in live_auctions:
                 del listing['_id']
@@ -134,20 +135,35 @@ def create_app(test_config=None):
 
         return response
         
-    @app.route('/start_auction', methods=["POST"])
-    def start_auction():
+    # @app.route('/start_auction', methods=["POST"])
+    # def start_auction():
+    #     payload = request.json
+    #     listing_id = payload['listing_id']
+    #     user = payload['user_id']
+    #     listing = service.handle_get_listing(listing_id)
+    #     start, time = service.handle_start_auction(user, listing)
+    #     if start == 'success':
+    #         response = create_response(200, 'auction begun', time)
+    #     elif not start:
+    #         response = create_response(404)
+    #     elif start == 'unauthorized':
+    #         response = create_response(400)
+    #     return response
+
+
+    @app.route('/stop_auction', methods=["POST]"])
+    def stop_auction():
         payload = request.json
+        admin = payload['admin_id']
         listing_id = payload['listing_id']
-        user = payload['user_id']
         listing = service.handle_get_listing(listing_id)
-        start, time = service.handle_start_auction(user, listing)
-        if start == 'success':
-            response = create_response(200, 'auction begun', time)
-        elif not start:
-            response = create_response(404)
-        elif start == 'unauthorized':
-            response = create_response(400)
-        return response
+
+        details = {
+            'status': 'complete',
+            'end_time': datetime.today()
+        }
+
+        service.handle_stop_auction(admin, listing, details)
 
 
     @app.route('/take_bid', methods=["POST"])
@@ -155,8 +171,9 @@ def create_app(test_config=None):
         payload = request.json
         bidder = payload['user_id']
         highest_bid = payload['bid']
+        listing_id = payload['listing_id']
 
-        listing = service.handle_get_listing(payload['listing_id'])
+        listing = service.handle_get_listing(listing_id)
 
         if not listing:
             return create_response(404)
@@ -289,7 +306,7 @@ class AuctionService:
         listing = self.db.find_one({'listing_id': listing_id})
         if not listing:
             return None
-        elif listing['seller'] != user:
+        elif listing['seller'] != user or len(listing['bid_list']) > 0:
             return 'unauthorized'
         else:
             jobs = [listing['start_id'], listing['stop_id'], listing['alert_id']]
@@ -301,7 +318,7 @@ class AuctionService:
             return 'success'
 
     
-    def handle_update_listing(self, user, listing, details):
+    def handle_update_listing(self, user, listing, details, stop_auction=False):
         if not listing:
             return None
         elif listing['seller'] != user:
@@ -313,19 +330,26 @@ class AuctionService:
                 if k in details.keys():
                     time_mods.append(details[k])        
 
-            jobs = [listing['start_id'], listing['stop_id'], listing['alert_id']]
-            for i, mod in enumerate(time_mods):
-                job_id = jobs[i]
-                self.scheduler.reschedule_job(job_id, 'date', run_date=mod)
+            if not stop_auction:
+                jobs = [listing['start_id'], listing['stop_id'], listing['alert_id']]
+                for i, mod in enumerate(time_mods):
+                    job_id = jobs[i]
+                    self.scheduler.reschedule_job(job_id, 'date', run_date=mod)
             
             self.db.update_one({'listing_id': listing['listing_id']}, {'$set' : details})
             print('UPDATING', flush=True)
             return 'success'
 
 
-    def handle_view_live(self):
+    def handle_view_live(self, sort):
         live_auctions = list(self.db.find({'status': 'live'}))
-        return live_auctions
+        if sort == "end_soon":
+            output = sorted(live_auctions, key=lambda listing: datetime.strptime(listing['end_time'], "%Y-%m-%d %H:%M:%S"))
+        elif sort == "end_late":
+            output = sorted(live_auctions, key=lambda listing: datetime.strptime(listing['end_time'], "%Y-%m-%d %H:%M:%S"), reverse=True)
+        else:
+            output = live_auctions
+        return output
 
 
     def handle_start_auction(self, user, listing,
@@ -351,17 +375,15 @@ class AuctionService:
         
         job_id = listing['stop_id']
         self.scheduler.add_job(self.handle_stop_auction, 'date', run_date=stopper, args=[user, listing], id=job_id)
-        # self.scheduler.start()
         
         job_id = listing['alert_id']
         self.scheduler.add_job(self.end_game_alert, 'date',run_date=endgame, args=[listing], id=job_id)
-        # self.scheduler.start()
         
         return (start, datetime.today())
 
     
     def handle_stop_auction(self, user, listing, details={'status':'complete'}):
-        stop = self.handle_update_listing(user, listing, details)
+        stop = self.handle_update_listing(user, listing, details, stop_auction=True)
         self.pass_winner(listing['listing_id'])
         return (stop, datetime.today())
 

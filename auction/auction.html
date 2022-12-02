@@ -1,0 +1,128 @@
+<html>
+    <h2>404 Online Auction House!</h2>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+        body {font-family: Arial, Helvetica, sans-serif;}
+        /* form {border: 3px solid #f1f1f1;} */
+
+        button[name="auction_action"] {
+          background-color: #4f04aa;
+          color: white;
+          padding: 14px 20px;
+          margin: 8px 0;
+          border: none;
+          cursor: pointer;
+          width: 100%;
+          float: right;
+        }
+        
+        button[name="auction_action"]:hover {
+          opacity: 0.8;
+        }
+
+        button[name="listing_action"] {
+          background-color: #ebe40b;
+          color: white;
+          padding: 14px 20px;
+          margin: 8px 0;
+          border: none;
+          cursor: pointer;
+          width: 100%;
+          float: right;
+        }
+        
+        button[name="listing_action"]:hover {
+          opacity: 0.8;
+        }
+        
+        button[name="admin"] {
+          background-color: #f44336;
+          color: white;
+          padding: 14px 20px;
+          margin: 8px 0;
+          border: none;
+          cursor: pointer;
+          width: 100%;
+        }
+        
+        button[name="admin"]:hover {
+          opacity: 0.8;
+        }
+
+        .container{
+          padding: 16px;
+        }
+
+        .column {
+        float: left;
+        padding: 10px;
+        }
+
+        .left, .right {
+        width: 32%;
+        }
+
+        .middle {
+        width: 32%;
+        }
+
+        .row:after {
+        content: "";
+        display: table;
+        clear: both;
+        }
+        
+        </style>
+        </head>
+        <body>
+        
+        <h3>Auctions</h3>
+
+        <div class="row">
+            <div class="column left">
+                <div class="container">
+                    <form action="/action_page.php" methods="POST",>   <!-- post api-->
+                        <!-- <label for="itemId"><b>Create, change, or bid on a listing by entering its Item ID:</b></label> -->
+                        <button name="listing_action">Create Listing</button>
+                        <input type="text" placeholder="Enter Item ID" name="listing_id" required>
+                        <br>
+                        <button name="listing_action">Delete Listing</button>
+                        <input type="text" placeholder="Enter Item ID" name="listing_id" required>
+                        <input type="text" placeholder="Enter User ID" name="user_id" required>
+                        
+                        <button name="listing_action">Update Listing</button>
+                        <input type="text" placeholder="Enter Item ID" name="listing_id" required>
+                        <input type="text" placeholder="Enter User ID" name="user_id" required>
+                        <input type="text" placeholder="Enter your changes" name="details" required>
+
+                        <button name="listing_action">Place a Bid</button>
+                        <input type="text" placeholder="Enter Item ID" name="listing_id" required>
+                        <input type="text" placeholder="Enter User ID" name="user_id" required>
+                        <input type="number" placeholder="Bid Amount" name="bid" required>
+
+                </div>
+            </div>
+
+            <div class="column middle">
+                <div class="container">
+                    <form action="/action_page.php" method="get">   <!-- get api-->
+                        <button name="auction_action">View Live Auctions</button>
+                        <button name="auction_action">See Auction Details</button>
+                        <input type="text" placeholder="Enter Item ID" name="listing_id" required>
+                    </form>
+                </div>
+            </div>
+
+            <div class="column right">
+                <div class="container">
+                    <form action="/action_page.php" method="get">   <!-- get api-->
+                    <!-- <button name="admin">View Live Auctions</button> -->
+                    <!-- <button name="admin">View Recent Auction Results</button> -->
+                    <!-- <button name="admin">View Bids</button> -->
+                </div>
+            </div>
+        </div>
+
+        </body>
+</html>
