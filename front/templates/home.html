@@ -80,6 +80,7 @@
         .column {
         float: left;
         padding: 10px;
+        width: 100%;
         }
 
         .left, .right {
@@ -115,8 +116,12 @@
                 <div class="container">
                     <button name="item">Create Item</button>
                     <button name="item">Modify Item</button>
-                    <button name="item">Delete Item</button>
-                    <button name="item">Categorize</button>
+                    <form action="/action_page.php" method="post">   <!-- post api-->
+                      <label for="itemId"><b>Enter Item ID of the item you want to delete:</b></label>
+                      <input type="number" placeholder="Enter Item ID" name="itemId" required>
+                      <button name="item">Delete Item</button>
+                    </form>
+                    <button name="item">Categorize Item</button>
                 </div>
             </div>
 
@@ -124,7 +129,7 @@
                 <div class="container">
                     <form action="/action_page.php" method="post">   <!-- post api-->
                             <label for="itemId"><b>Enter Item ID and perform one of the operations:</b></label>
-                            <input type="text" placeholder="Enter Item ID" name="itemId" required>
+                            <input type="number" placeholder="Enter Item ID" name="itemId" required>
                             <button name="cart_auction">Add to Cart</button>
                             <button name="cart_auction">Delete from Cart</button>
                             <button name="cart_auction">Add to Watchlist</button>

@@ -36,6 +36,10 @@ def home():
 def signUp():
     return render_template('signUp.html')
 
+@app.route('/createitem')
+def createitem():
+    return render_template('createitem.html')
+
 
 
 

@@ -8,20 +8,20 @@ from dotenv import load_dotenv
 # from flask_sqlalchemy import SQLAlchemy
 
 db = MongoEngine()
-connString = os.environ['MONGODB_CONNSTRING']   ### for docker uncomment
+# connString = os.environ['MONGODB_CONNSTRING']   ### for docker uncomment
 app = Flask(__name__)
 app.config["MONGODB_SETTINGS"] = [
     {
         "db": "item",
-        # "host": "localhost",               ### comment if docker
-        "host": connString,              ### comment if localhost
+        "host": "localhost",               ### comment if docker
+        # "host": connString,              ### comment if localhost
         "port": 27017,
         "alias": "core_item",
     },
     {
         "db": "category",
-        # "host": "localhost",
-        "host": connString,
+        "host": "localhost",
+        # "host": connString,
         "port": 27017,
         "alias": "core_category",
     }
@@ -35,6 +35,9 @@ def hello_world():
 
 
 def isint(num):
+    '''
+    To check if the arg passed in an integer
+    '''
     try:
         int(num)
         return True
@@ -43,11 +46,50 @@ def isint(num):
 
 
 def isfloat(num):
+    '''
+    To check if the arg passed in a float
+    '''
     try:
         float(num)
         return True
     except ValueError:
         return False
+
+
+@app.route('/categorize', methods=['POST'])
+def Categorize():
+    '''
+    Fucntion to add a category to an item
+    '''
+    item_inp = request.args.get('item_id')
+    categorize_inp = request.args.get('category_id')
+    if not isint(item_inp):
+        return jsonify({'error': 'Item Id has to be an integer'})
+    if not isint(categorize_inp):
+        return jsonify({'error': 'Category Id has to be an integer'})
+    presence_check = len(Item_class.objects(item_id=item_inp))
+    if presence_check == 0:
+        return jsonify({'error': 'Such an item ID does not exist'})
+    presence_check = len(Category_class.objects(category_id=categorize_inp))
+    if presence_check == 0:
+        return jsonify({'error': 'Such an category ID does not exist'})
+
+    item_out = Item_class.objects(item_id=item_inp)[0]
+    cat_out = Category_class.objects(category_id=categorize_inp)[0]
+    if item_inp not in cat_out.category_items:
+        cat_out.category_items.append(item_inp)
+        cat_out.save()
+    if categorize_inp not in item_out.item_categories:
+        item_out.item_categories.append(categorize_inp)
+        item_out.save()
+
+    return jsonify({
+        "status_code": "200",
+        "detail": "Item Categorized!"
+    })
+
+
+#FLAGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGg
 
 
 @app.route('/searchItemId', methods=['GET'])
@@ -84,9 +126,29 @@ def Search_ItemName():
         return jsonify(search_out.to_json())
 
 
-@app.route('/searchCategoryId', methods=['GET'])   ###########check op format
+@app.route('/searchCategory', methods=['GET'])       
+def Search_Category():
+    '''
+    Function to Search Category by category ID 
+    '''
+    search_inp = request.args.get('category_id')
+    if not isint(search_inp):
+        return jsonify({'error': 'Category Id has to be an integer'})
+    presence_check = len(Category_class.objects(category_id=search_inp))
+    if presence_check == 0:
+        return jsonify({'error': 'Such a category ID does not exist'})
+    search_out = Category_class.objects(category_id=search_inp)
+    if not search_out:
+        return jsonify({'error': 'Data not found'})
+    else:
+        return search_out[0].to_json_cat()
+
+
+@app.route('/searchCategoryId', methods=['GET'])
 def Search_CategoryID():
-    # mongo_setup.global_init_category()
+    '''
+    Search all items for a particular category
+    '''
     search_inp = request.args.get('category_id')
     if not isint(search_inp):
         return jsonify({'error': 'Category Id has to be an integer'})
@@ -94,23 +156,20 @@ def Search_CategoryID():
     if presence_check == 0:
         return jsonify({'error': 'Such a category ID does not exist'})
     search_out = Category_class.objects(category_id=search_inp)[0].category_items
-    # print(search_out)
     if not search_out:
         return jsonify({'error': 'Data not found'})
     else:
         final_op = []
         for i in search_out:
-
-            final_op.append(Item_class.objects(item_id=i).to_json())
-        # print(final_op)
-        # return jsonify(final_op.to_json())
-        return json.dumps(final_op)
+            final_op.append(Item_class.objects(item_id=i)[0].to_json())
+        return jsonify(final_op)
 
 
 @app.route('/createItem', methods=["POST"])
 def CreateItem():
-    # print("Please press enter to skip optional fields")
-    
+    '''
+    Function to creat an item
+    '''
     if len(Item_class.objects().all()) == 0:
         item_id = 1
     else:   
@@ -161,6 +220,16 @@ def CreateItem():
                     "error" : "Item categories must be a valid integers"
                 }
             })
+    for i in item_categories:
+        presence_check = len(Category_class.objects(category_id=i))
+        if presence_check == 0:
+            return jsonify({
+                "status_code": "400",
+                "detail": {
+                    "error" : f"Category {str(i)} does not exist"
+                }
+            })
+        
         
     i = Item_class()
     i.item_id = item_id
@@ -170,8 +239,16 @@ def CreateItem():
     i.item_weight = item_weight
     i.item_categories = item_categories
     i.item_status = "BuyNow"
+    i.item_flag = False
+    i.item_flag_list = []
+    i.item_owner = -1
 
     i.save()
+
+    for i in item_categories:
+        cat_out = Category_class.objects(category_id=i)[0]
+        cat_out.category_items.append(i)
+        cat_out.save()
 
     return jsonify({
         "status_code": "200",
@@ -183,6 +260,9 @@ def CreateItem():
 
 @app.route('/deleteItem', methods=["DELETE"])
 def DeleteItem():
+    '''
+    Fucntion to delete an item
+    '''
     item_id_to_delete = request.args.get('item_id')
     if not isint(item_id_to_delete):
         return jsonify({
@@ -210,7 +290,9 @@ def DeleteItem():
 
 @app.route('/updateItem', methods=["POST"])
 def UpdateItem():
-    
+    '''
+    Function to update an item
+    '''
     update_name = False
     update_price = False
     update_description = False
@@ -302,7 +384,9 @@ def UpdateItem():
 
 @app.route('/createCategory', methods=["POST"])
 def CreateCategory():
-
+    '''
+    Function to create a category
+    '''
     if len(Category_class.objects().all()) == 0:
         category_id = 1
     else:   
@@ -339,6 +423,9 @@ def CreateCategory():
 
 @app.route('/deleteCategory', methods=["DELETE"])
 def DeleteCategory():
+    '''
+    Function to delete category by category id
+    '''
     category_id_to_delete = request.args.get('category_id')
     if not isint(category_id_to_delete):
         return jsonify({
@@ -366,7 +453,9 @@ def DeleteCategory():
 
 @app.route('/updateCategory', methods=["POST"])
 def UpdateCategory():
-
+    '''
+    Function to update category
+    '''
     update_name = False
     update_description = False
 
@@ -419,6 +508,9 @@ def UpdateCategory():
     
 
 class Item_class(db.Document):
+    '''
+    Item class
+    '''
     item_id = db.IntField(required = True)
     item_name = db.StringField(required=True)
     item_description = db.StringField(required=False)
@@ -426,6 +518,9 @@ class Item_class(db.Document):
     item_weight = db.FloatField(required=False)
     item_categories = db.ListField(required=False)
     item_status = db.StringField(required=True)
+    item_flag = db.BooleanField(requred=True)
+    item_flag_list = db.ListField(required=False)
+    item_owner = db.IntField(required = True)
 
     meta = {
         'db_alias': 'core_item',
@@ -444,6 +539,9 @@ class Item_class(db.Document):
 
 
 class Category_class(db.Document):
+    '''
+    Category_class
+    '''
     category_id = db.IntField(required = True)
     category_name = db.StringField(required=True)
     category_description = db.StringField(required=False)
@@ -453,6 +551,14 @@ class Category_class(db.Document):
         'db_alias': 'core_category',
         'collection': 'categories'
     }
+
+    def to_json_cat(self):
+        return {
+            "category_id": self.category_id,
+            "category_name": self.category_name,
+            "category_description": self.category_description,
+            "category_items": self.category_items
+        }
 
 
 if __name__ == "__main__":
