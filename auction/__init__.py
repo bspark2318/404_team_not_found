@@ -432,6 +432,25 @@ class AuctionService:
             winner, amount, _ = listing['bid_list'][0]
             payout_details['winner'] = winner
             payout_details['cost'] = amount
+
+
+        def view_user_bids(self, user_id):
+            high_bids = []
+            listings = list(self.db.find({'bid_list':user_id}, {'_id': False, 'listing_id': 1, 'listing_name': 1, 'bid_list':1}))
+            for listing in listings:
+                for bid in listing['bid_list']
+                    if bid[0] == user_id:
+                        high_bids.append(bid)
+                        break
+            
+            for i, bid in enumerate(high_bids):
+                _, amount, timestamp = bid
+                listings[i]['bid'] = [amount, timestamp]
+                del listings[i]['bid_list']
+            return listings
+                
+
+
         
         #send this to payment processing
         return payout_details
