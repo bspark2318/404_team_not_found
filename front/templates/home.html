@@ -124,7 +124,7 @@
                 <div class="container">
                     <form action="/action_page.php" method="post">   <!-- post api-->
                             <label for="itemId"><b>Enter Item ID and perform one of the operations:</b></label>
-                            <input type="text" placeholder="Enter Item ID" name="itemId" required>
+                            <input type="text" placeholder="Enter Item ID" name="itemId" id = "itemId" required>
                             <button name="cart_auction">Add to Cart</button>
                             <button name="cart_auction">Delete from Cart</button>
                             <button name="cart_auction">Add to Watchlist</button>
@@ -146,7 +146,7 @@
                     <button name="user_admin">Receive Customer Support</button>
                     <!-- if user_id.status == "admin" -->
                     <!-- <button name="user_admin">Suspend User</button> ###########3input button -->
-                    <button name="user_admin">Log out</button>
+                    <a href="{{ url_for('logoutUser') }}"><button name="user_admin">Log out</button></a>
                 </div>
             </div>
         </div>
