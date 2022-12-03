@@ -17,15 +17,6 @@ def create_app(test_config=None):
     )
     
     load_dotenv()
-    connString = os.environ['MONGODB_CONNSTRING']
-    
-    ## Change this to the docker host//IP ADDRESSS
-    client = MongoClient(connString, 27017)
-    db_conn = client.core
-
-    scheduler = BackgroundScheduler(jobstores={'mongo': MongoDBJobStore(client=client)}, executors={'default': ThreadPoolExecutor(20)}, job_defaults={'coalesce': False, 'max_instances': 3},timezone='America/Chicago')
-    scheduler.start()
-
 
     if test_config is None:
         # load the instance config, if it exists, when not testing
@@ -40,7 +31,6 @@ def create_app(test_config=None):
     
     except OSError:
         pass
-
 
 
     @app.route('/create_listing')

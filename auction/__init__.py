@@ -106,9 +106,17 @@ def create_app(test_config=None):
     @app.route('/update_listing', methods=["POST"])
     def update_listing():
         payload = request.json
+        details = {}
         user = payload['user_id']
         listing_id = payload['listing_id']
-        details = payload['details']
+
+        for field in payload:
+            if field != 'user_id' and field != 'listing_id':
+                details[field] = payload[field]
+
+        if len(details) == 0:
+            return create_response(400)
+
         listing = service.handle_get_listing(listing_id)
 
         update = service.handle_update_listing(user, listing, details)
@@ -260,11 +268,12 @@ class AuctionService:
             listing_obj = {} 
             dest_source = [("listing_id", 'item_id'), ("listing_name", 'item_name'), ("start_time", 'start_time'), ("starting_price", 'price'),
             ("current_price", 'price'), ("increment", 'increment'), ("description", 'description'),
-            ("seller", 'user_id'), ("seller_email", 'owner_email'), ("watchers", 'watchers'), ("end_time", 'end_time'), ("endgame", 'endgame'), ("bid_list", 'bid_list')]
+            ("seller", 'user_id'), ("seller_email", 'owner_email'), ("watchers", 'watchers'), ("end_time", 'end_time'), ("endgame", 'endgame')]
             
             for dest, source in dest_source:
                 listing_obj[dest] = item_details[source]
             
+            listing_obj['bid_list'] = []
             listing_obj['start_id'] = str(listing_obj['listing_id']) + 'start'
             listing_obj['stop_id'] = str(listing_obj['listing_id']) + 'stop'
             listing_obj['alert_id'] = str(listing_obj['listing_id']) + 'alert'
@@ -343,9 +352,9 @@ class AuctionService:
 
     def handle_view_live(self, sort):
         live_auctions = list(self.db.find({'status': 'live'}))
-        if sort == "end_soon":
+        if sort == "Nearest to end":
             output = sorted(live_auctions, key=lambda listing: datetime.strptime(listing['end_time'], "%Y-%m-%d %H:%M:%S"))
-        elif sort == "end_late":
+        elif sort == "Furthest from end":
             output = sorted(live_auctions, key=lambda listing: datetime.strptime(listing['end_time'], "%Y-%m-%d %H:%M:%S"), reverse=True)
         else:
             output = live_auctions
@@ -367,8 +376,8 @@ class AuctionService:
 
         endgame = listing['endgame']
         if not endgame:
-            endgame = stopper - relativedelta(days=1)
-            print('No endgame provided. Default endgame alert is sent 1 day prior to end of auction', flush=True)
+            endgame = stopper - relativedelta(hours=1)
+            print('Default endgame alert is sent 1 hour prior to end of auction', flush=True)
         else:
             delta = stopper - datetime.strptime(endgame, '%Y-%m-%d %H:%M:%S')
             endgame = stopper - delta

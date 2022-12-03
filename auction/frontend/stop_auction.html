@@ -1,0 +1,89 @@
+<html>
+<h2>404 Online Auction House!</h2>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {font-family: Arial, Helvetica, sans-serif;}
+        /* form {border: 3px solid #f1f1f1;} */
+        input[type=number], input[type=password]{
+            width: 100%;
+            padding: 12px 20px;
+            margin: 8px 0;
+            display: inline-block;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+
+        input[type="submit"] {
+            background-color: #04AA6D;
+            color: white;
+            padding: 14px 20px;
+            margin: 8px 0;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        input[type="submit"]:hover {
+            opacity: 0.5;
+        }
+
+        .container{
+            padding: 16px;
+        }
+
+        .column {
+            float: left;
+            padding: 10px;
+        }
+
+        .left, .right {
+            width: 32%;
+        }
+
+        .middle {
+            width: 25%;
+        }
+
+        .row:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+
+    </style>
+    <script>
+        var check = function() {
+            if (document.getElementById('password').value == document.getElementById('confirm_password').value) {
+                document.getElementById('message').style.color = 'green';
+                document.getElementById('message').innerHTML = 'Passwords match';
+            } else {
+                document.getElementById('message').style.color = 'red';
+                document.getElementById('message').innerHTML = 'Passwords do not match';
+            }
+        }
+    </script>
+</head>
+<body>
+
+<h3>Stop an Auction Early</h3>
+
+<div class="row">
+    <div class="column middle">
+        <div class="container">
+            <form action="/stop_auction.php" method="post">   <!-- post api-->
+            <label for="listing_id">Enter Listing ID of the auction you would like to stop:
+                <input type="number" id = "listing_id" placeholder="Enter Listing ID" name="listing_id" required>
+            </label>
+
+            <label for="admin_id">Enter your Admin ID:
+                <input type="number" placeholder="Enter ID" id="admin_id" name="admin_id">
+            </label>
+
+            </form>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
