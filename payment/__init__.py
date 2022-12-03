@@ -17,11 +17,16 @@ def create_app(test_config=None):
     ## Make the database right here
     
     load_dotenv()
-
+    connString = os.environ['POSTGRESQL_CONNSTRING']
+    # db_user = os.environ['POSTGRES_USER']
+    # db_password = os.environ['POSTGRES_PASSWORD']
     ## PSQL
     db_conn = psycopg2.connect(
-        host="localhost",
+        host=connString,
+        
         database="ebay",
+        # user=db_user, 
+        # password=db_password
         # user=os.environ[''],
         # password=os.environ['']
     )
@@ -42,7 +47,7 @@ def create_app(test_config=None):
 
     service = PaymentService(db_conn)
     
-    def create_response(status, message, user_id=None, total=None cart_id=None, transaction_id=None, timestamp=None):
+    def create_response(status, message, user_id=None, total=None, cart_id=None, transaction_id=None, timestamp=None):
         response_payload = {}
         response_payload["user_id"] = user_id if user_id else ""
         response_payload["cart_id"] = cart_id if cart_id else ""

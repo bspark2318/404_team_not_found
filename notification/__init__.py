@@ -18,13 +18,13 @@ def create_app(test_config=None):
     
     load_dotenv()
     connString = os.environ['MONGODB_CONNSTRING']
-    print("connString", connString)
+    # print("connString", connString)
     
     
     ## Change this to the docker host//IP ADDRESSS
     client = MongoClient(connString, 27017)
     
-    print("Is there a connection?", client)
+    # print("Is there a connection?", client) 
     
     # client = MongoClient("localhost", 27017)
     db_conn = client.ebay
@@ -89,6 +89,18 @@ def create_app(test_config=None):
                 
         success = service.handle_seller_bid_alert(auction_title, auction_id, new_bid, old_bid, recipient)
         response = create_response(success, recipient, "seller_bid_alert")    
+        print("Making a request items ")
+        params = {
+            "item_name": "hello",
+            "item_description": "desc",
+            "item_price": 123,
+            "item_weight": 122,
+            "item_categories": [1, 3, 5]   
+        }
+        resp = requests.post(
+            "http://service.item:5000/createItem", params=params)
+        print("Response status :", resp)
+        
         return response
     
     @app.route('/alert_buyer_outbid', methods=["POST"])
@@ -153,7 +165,7 @@ class NotificationService:
 			"to": recipient,
 			"subject": title,
 			"text": content})
-        
+    
         return resp
     
     def handle_alert_watchlist(self, item_id, auction_id, timestamp, recipient):
