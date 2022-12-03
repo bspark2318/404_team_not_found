@@ -165,6 +165,30 @@ def Search_CategoryID():
         return jsonify(final_op)
 
 
+@app.route('/allCategories', methods=['GET'])
+def Search_all_Categories():
+    '''
+    Search all existing categories
+    '''
+    search_out = Category_class.objects().all()
+    final_op = []
+    for i in search_out:
+        final_op.append(i.to_json_cat())
+    return jsonify(final_op)
+
+
+@app.route('/allItems', methods=['GET'])
+def Search_all_Items():
+    '''
+    Search all existing items
+    '''
+    search_out = Item_class.objects().all()
+    final_op = []
+    for i in search_out:
+        final_op.append(i.to_json())
+    return jsonify(final_op)
+
+
 @app.route('/createItem', methods=["POST"])
 def CreateItem():
     '''
@@ -247,7 +271,7 @@ def CreateItem():
 
     for i in item_categories:
         cat_out = Category_class.objects(category_id=i)[0]
-        cat_out.category_items.append(i)
+        cat_out.category_items.append(item_id)
         cat_out.save()
 
     return jsonify({

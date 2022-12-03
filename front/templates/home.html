@@ -147,8 +147,8 @@
         <div class="row">
             <div class="column left">
                 <div class="container">
-                    <button name="item">Create Item</button>
-                    <button name="item">Modify Item</button>
+                    <a href="{{ url_for('createitem') }}"><button name="item">Create Item</button></a>
+                    <a href="{{ url_for('modifyitem') }}"><button name="item">Modify Item</button></a>
                     <form action="/action_page.php" method="post">   <!-- post api-->
                       <label for="itemId"><b>Enter Item ID of the item you want to delete:</b></label>
                       <input type="number" placeholder="Enter Item ID" name="itemId" required>
@@ -167,8 +167,8 @@
 
                     <hr>
 
-                    <button name="cat">Create Category</button>
-                    <button name="cat">Modify Category</button>
+                    <a href="{{ url_for('createcategory') }}"><button name="cat">Create Category</button></a>
+                    <a href="{{ url_for('modifycategory') }}"><button name="cat">Modify Category</button></a>
                     <form action="/action_page.php" method="post">   <!-- post api-->
                       <label for="catId"><b>Enter Category ID of the category you want to delete:</b></label>
                       <input type="number" placeholder="Enter Category ID" name="catId" required>
