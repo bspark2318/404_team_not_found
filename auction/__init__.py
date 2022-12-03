@@ -61,33 +61,31 @@ def create_app(test_config=None):
     def hello_world():
         return 'Auction Microservice'
     
+    
     @app.route('/create_listing', methods=["POST"])
     def create_listing():
         payload = request.json
+        item_details ={}
+
         listing_id = payload['listing_id']
-        item_details = payload['item_details']
-        #request to item service for item details
+        for field in payload:
+            if field !='listing_id:':
+                item_details[field] = payload[field]
+        resp = requests.get(
+            "http://service.item:5000/Search_ItemID", listing_id)
+
+        for field in resp:
+            item_details[field] = payload[field]
         
         listing = service.handle_create_listing(item_details)
         if listing:
             del listing['_id']
-            #response = create_response( 201 if listing else 400 , field_name="listing_details", field_obj=listing)
             print('new listing baby', flush=True)
             response = create_response(201, field_name="listing_details", field_obj=listing)
         else:
             print('that already existed', flush=True)
             response = create_response(400)
         return response
-    
-# params = {
-#             "item_name": "hello",
-#             "item_description": "desc",
-#             "item_price": 123,
-#             "item_weight": 122,0
-#             "item_categories": [1, 3, 5]   
-#         }
-#         resp = requests.post(
-#             "http://service.item:5000/getItem", listing_id)
 
 
     @app.route('/get_listing', methods=["GET"])
@@ -154,7 +152,17 @@ def create_app(test_config=None):
                     field_name='Live Auctions', field_obj=live_auctions)
 
         return response
-        
+    
+    @app.route('/view_bids', methods=['GET'])
+    def view_bids():
+        user_id = request
+        listings = service.view_user_bids(user_id)
+        if not listings:
+            return create_response(404)
+        else:
+            return create_response(200, f'Listings bid on by user number {user_id}', listings)
+
+
     # @app.route('/start_auction', methods=["POST"])
     # def start_auction():
     #     payload = request.json
@@ -255,9 +263,6 @@ def create_app(test_config=None):
         #         }
         #     }
         # }   
-
-        return payout_details
-
 
 
     return app
@@ -433,26 +438,35 @@ class AuctionService:
             rv = (accepted, prior_bid, listing_id, listing_name, seller, highest_bid, bidder)
 
         return rv
-            
+
+
     def handle_view_metrics(self, window_start, window_end):
         
         req_auctions = self.db.find({'end_time' : {'$gte': window_start, '$lte': window_end}, 'status': 'complete'})
         
         return list(req_auctions)
 
+
     def pass_winner(self, listing_id):
         listing = self.handle_get_listing(listing_id)
-        payout_details = {
-                'winner': None,
-                'cost': None,
-                'seller': listing['seller'],
-                'seller_email': listing['seller_email'],
-                'item': listing['listing_id']
-            }
         if listing['bid_list']:
             winner, amount, _ = listing['bid_list'][0]
-            payout_details['winner'] = winner
-            payout_details['cost'] = amount
+
+            user_details = requests.get(
+                "http://service.user:5000/lookupUser", winner
+            )
+            payout_details = {
+                    'user_id': winner,
+                    'total': amount,
+                    # 'seller': listing['seller'],
+                    # 'seller_email': listing['seller_email'],
+                    # 'item': listing['listing_id'],
+                    'payment_method':user_details['payment_method'],
+                    "cart_id": listing_id
+                }
+
+            resp = requests.post(
+                "http://service.payment:5000/pay_for_cart", payout_details)
 
 
     def view_user_bids(self, user_id):
@@ -469,119 +483,6 @@ class AuctionService:
                 listings[i]['bid'] = [amount, timestamp]
                 del listings[i]['bid_list']
             return listings
-                
-        #send this to payment processing
-        return payout_details
-
-
-    def handle_buyer_outbid_alert(self, auction_title, auction_id, new_bid, old_bid, recipient):
-        try:
-            ## Handle sending the email
-            noti_title = "Buyer Outbid Alert for Auction \"{}\"".format(auction_title)
-            noti_message = "You have been outbid for the auction with ID {}:\nNew Bid: {}\nOld Bid:{}".format(auction_id, new_bid, old_bid)
-            noti_timestamp = time.time()
-            response = self.send_email(recipient, noti_title, noti_message)
-            print("Buyer Outbid Alert Notification Status: ", response)
-            
-            ## Handle database transaction
-            records = []
-            for user_email in recipient:
-                storage_obj = {}
-                storage_obj["alert_type"] = "buyer_outbid_alert"
-                storage_obj["user_email"] = user_email
-                storage_obj["auction_id"] = auction_id
-                storage_obj["new_bid"] = new_bid
-                storage_obj["timestamp"] = noti_timestamp
-                records.append(storage_obj)
-            
-            self.db.insert_many(records)
-        except:
-            print("Error: Failure to execute \"handle_buyer_outbid_alert\"")
-            return False
-        
-        return True
-    
-    def handle_seller_bid_alert(self, auction_title, auction_id, new_bid, old_bid, recipient):
-        try:
-            ## Handle sending the email
-            noti_title = "Seller Bid Alert for Auction \"{}\"".format(auction_title)
-            noti_message = "Your auction with ID {} has received a new bid.\nNew Bid: {}\nOld Bid:{}".format(auction_id, new_bid, old_bid)
-            noti_timestamp = time.time()
-            response = self.send_email(recipient, noti_title, noti_message)
-            print("Seller Bid Alert Notification Status: ", response)
-            
-            ## Handle database transaction
-            records = []
-            for user_email in recipient:
-                storage_obj = {}
-                storage_obj["alert_type"] = "seller_bid_alert"
-                storage_obj["user_email"] = user_email
-                storage_obj["auction_id"] = auction_id
-                storage_obj["new_bid"] = new_bid
-                storage_obj["timestamp"] = noti_timestamp
-                records.append(storage_obj)
-            
-            self.db.insert_many(records)
-        except:
-            print("Error: Failure to execute \"handle_seller_bid_alert\"")
-            return False
-        
-        return True
-    
-    def handle_countdown_alert(self, auction_title, auction_id, current_bid, end_time, recipient):
-        try:
-            ## Handle sending the email
-            noti_title = "Countdown Alert for Auction \"{}\"".format(auction_title)
-            noti_message = "Auction with ID {} is expiring in 10 minutes!\nEnd Time: {}\nCurrent Highest Bid:{}".format(auction_id, end_time, current_bid)
-            noti_timestamp = time.time()
-            response = self.send_email(recipient, noti_title, noti_message)
-            print("Countdown Alert Notification Status: ", response)
-            
-            ## Handle database transaction
-            records = []
-            for user_email in recipient:
-                storage_obj = {}
-                storage_obj["alert_type"] = "countdown_alert"
-                storage_obj["user_email"] = user_email
-                storage_obj["auction_id"] = auction_id
-                storage_obj["timestamp"] = noti_timestamp
-                records.append(storage_obj)
-            
-            self.db.insert_many(records)
-        except:
-            print("Error: Failure to execute \"handle_countdown_alert\"")
-            return False
-        
-        return True
-    
-    def handle_customer_support_response(self, user_id, request_body, response_body, recipient):    
-        try:
-            ## Handle sending the email
-            request_title = request_body["title"]
-            request_content = request_body["content"]
-            response_content = response_body["content"]
-            noti_title = "Responding to the request \"{}\"".format(request_title)
-            noti_message = "Here is the response to your question:\n{}\n\nResponse:\n{}".format(request_content, response_content)
-            noti_timestamp = time.time()
-            response = self.send_email(recipient, noti_title, noti_message)
-            print("Customer Support Response Notification Status: ", response)
-            
-            ## Handle database transaction
-            records = []
-            for user_email in recipient:
-                storage_obj = {}
-                storage_obj["alert_type"] = "customer_support_response"
-                storage_obj["user_email"] = user_email
-                storage_obj["request"] = request_body
-                storage_obj["response"] = response_body
-                storage_obj["timestamp"] = noti_timestamp
-                records.append(storage_obj)
-            self.db.insert_many(records)
-        except:
-            print("Error: Failure to execute \"handle_customer_support_response\"")
-            return False
-        
-        return True
     
             
     def alert_out_bid(self, prior_leader, prior_bid, highest_bid, listing_id, listing_name):
@@ -595,10 +496,8 @@ class AuctionService:
         post_body["timestamp"] = datetime.timestamp(dt)
         post_body["recipient"] = [prior_leader]
         
-        ## Do we need to implement this through async pub sub?
-        ## Will need to change the URL later on
         resp = requests.post(
-            "http://localhost:5000/alert_buyer_outbid",
+            "http://service.notification:5000/alert_buyer_outbid",
             json=post_body
         )
         
@@ -618,10 +517,8 @@ class AuctionService:
         post_body["timestamp"] = datetime.timestamp(dt)
         post_body["recipient"] = [seller]
         
-        ## Do we need to implement this through async pub sub?
-        ## Will need to change the URL later on
         resp = requests.post(
-            "http://localhost:5000/alert_seller_bid",
+            "http://service.notification:5000/alert_seller_bid",
             json=post_body
         )
         
@@ -644,10 +541,8 @@ class AuctionService:
         post_body["end_time"] = listing['end_time']
         post_body["recipient"] = listing["watchers"]
         
-        ## Do we need to implement this through async pub sub?
-        ## Will need to change the URL later on
         resp = requests.post(
-            "http://localhost:5000/alert_countdown",
+            "http://service.notification:5000/alert_countdown",
             json=post_body
         )
         print("alert End Game: ", resp)
