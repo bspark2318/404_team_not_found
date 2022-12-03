@@ -491,7 +491,7 @@ class AuctionService:
         listings = list(self.db.find({'bid_list':user_id}, {'_id': False, 'listing_id': 1, 'listing_name': 1, 'bid_list':1}))
 
         for listing in listings:
-            for bid in listing['bid_list']
+            for bid in listing['bid_list']:
                 if bid[0] == user_id:
                     high_bids.append(bid)
                     break
