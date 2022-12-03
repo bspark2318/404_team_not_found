@@ -1,12 +1,10 @@
 import flask
 from flask_mongoengine import MongoEngine
-from flask import render_template
 import requests
 import os
 import json
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, session, flash, redirect, url_for, render_template
 from dotenv import load_dotenv
-# from flask_sqlalchemy import SQLAlchemy
 
 db = MongoEngine()
 # connString = os.environ['MONGODB_CONNSTRING']   ### for docker uncomment
@@ -20,8 +18,8 @@ app = Flask(__name__)
 #         "alias": "core_item",
 #     },
 # ]
+app.config['SECRET_KEY'] = 'GDtfDCFYjD'
 db.init_app(app)
-
 
 
 @app.route('/')
@@ -30,6 +28,9 @@ def login():
 
 @app.route('/home')
 def home():
+    # user_id = None
+    # if session['user']:
+    #     user_id = session['user']
     return render_template('home.html')
 
 @app.route('/search')
@@ -72,7 +73,42 @@ def loginUser():
         'password': form['psw']
     }
     resp = requests.post("http://service.user:5000/login",params=params)
-    return resp.json()
+    if resp.json()['status_code'] == "200":
+        session['user'] = resp.json()["detail"]["user_id"]
+        return redirect(url_for('home'))
+    else:
+        # flash('Incorrect credentials')
+        return redirect(url_for('login'))
+
+
+@app.route('/signUp_User', methods=['POST'])
+def signUp_User():
+    form = request.form
+    params = {
+        # 'user_id': session['user'],
+        'user_name': form['user_name'],
+        'first_name': form['first_name'],
+        'last_name': form['last_name'],
+        'password': form['password'],
+        'date_of_birth': form['date_of_birth'],
+        'address': form['address'],
+        'email': form['email'],
+        'phone_number': form['phone_number']
+    }
+    resp = requests.post("http://service.user:5000/signUp",params=params)
+    if resp.json()['status_code'] == "200":
+        # return resp.json()["detail"]
+        return redirect(url_for('login'))
+    else:
+        return resp.json()["detail"]
+
+
+
+@app.route('/logoutUser', methods=['POST','GET'])
+def logoutUser():
+    session.pop('user', None)
+    return redirect(url_for('login'))
+
 
 if __name__ == "__main__":
     # app.run()

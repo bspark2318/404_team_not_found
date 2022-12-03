@@ -82,7 +82,7 @@
           cursor: pointer;
           width: 100%;
         }
-        
+
         button[name="categorize"]:hover {
           opacity: 0.8;
         }
@@ -96,7 +96,7 @@
           cursor: pointer;
           width: 100%;
         }
-        
+
         button[name="cat"]:hover {
           opacity: 0.8;
         }
@@ -107,7 +107,7 @@
 
         hr {
         height: 2px;
-        background: black; 
+        background: black;
         }
 
         .column {
@@ -171,7 +171,7 @@
                     <a href="{{ url_for('modifycategory') }}"><button name="cat">Modify Category</button></a>
                     <form action="/action_page.php" method="post">   <!-- post api-->
                       <label for="catId"><b>Enter Category ID of the category you want to delete:</b></label>
-                      <input type="number" placeholder="Enter Category ID" name="catId" required>
+                      <input type="number" id = "catId" placeholder="Enter Category ID" name="catId" required>
                       <button name="cat">Delete Category</button>
                     </form>
                 </div>
@@ -203,7 +203,7 @@
                     <button name="user_admin">Receive Customer Support</button>
                     <!-- if user_id.status == "admin" -->
                     <!-- <button name="user_admin">Suspend User</button> ###########3input button -->
-                    <button name="user_admin">Log out</button>
+                    <a href="{{ url_for('logoutUser') }}"><button name="user_admin">Log out</button></a>
                 </div>
             </div>
         </div>

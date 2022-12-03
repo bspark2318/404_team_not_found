@@ -2,3 +2,4 @@ flask
 flask-mongoengine
 requests
 python-dotenv
+Flask-Session
