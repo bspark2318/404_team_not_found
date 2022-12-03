@@ -18,10 +18,15 @@ def create_app(test_config=None):
     
     load_dotenv()
     connString = os.environ['POSTGRESQL_CONNSTRING']
+    # db_user = os.environ['POSTGRES_USER']
+    # db_password = os.environ['POSTGRES_PASSWORD']
     ## PSQL
     db_conn = psycopg2.connect(
         host=connString,
+        
         database="ebay",
+        # user=db_user, 
+        # password=db_password
         # user=os.environ[''],
         # password=os.environ['']
     )
