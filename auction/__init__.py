@@ -449,9 +449,6 @@ class AuctionService:
                 del listings[i]['bid_list']
             return listings
                 
-
-
-        
         #send this to payment processing
         return payout_details
 
