@@ -1,0 +1,101 @@
+<html>
+<h2>404 Online Auction House!</h2>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {font-family: Arial, Helvetica, sans-serif;}
+        /* form {border: 3px solid #f1f1f1;} */
+        input[type=text], input[type=password], input[type=tel], input[type=email], input[type=date], input[type=number] {
+            width: 100%;
+            padding: 12px 20px;
+            margin: 8px 0;
+            display: inline-block;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+
+        input[type="submit"] {
+            background-color: #04AA6D;
+            color: white;
+            padding: 14px 20px;
+            margin: 8px 0;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        input[type="submit"]:hover {
+            opacity: 0.5;
+        }
+
+        .container{
+            padding: 16px;
+        }
+
+        .column {
+            float: left;
+            padding: 10px;
+        }
+
+        .left, .right {
+            width: 32%;
+        }
+
+        .middle {
+            width: 25%;
+        }
+
+        .row:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+
+    </style>
+    <script>
+        var check = function() {
+            if (document.getElementById('password').value == document.getElementById('confirm_password').value) {
+                document.getElementById('message').style.color = 'green';
+                document.getElementById('message').innerHTML = 'Passwords match';
+            } else {
+                document.getElementById('message').style.color = 'red';
+                document.getElementById('message').innerHTML = 'Passwords do not match';
+            }
+        }
+    </script>
+</head>
+<body>
+
+<h3>Create Item</h3>
+
+<div class="row">
+    <div class="column middle">
+        <div class="container">
+            <form action="/signUp_page.php" method="post">   <!-- post api-->
+                <label for="item_name">Enter Item Name:
+                    <input type="text" id = "item_name" placeholder="Enter Item Name" name="item_name" required>
+                </label>
+
+                <label for="item_price">Enter Item Price:
+                    <input type="number"  step="0.01" id="item_price" placeholder="Enter Item Price" name="item_price" required>
+                </label>
+
+                <label for="item_desc">Enter Item Description:
+                    <input type="text" id="item_desc" placeholder="Enter Item Description" name="item_desc">
+                </label>
+
+                <label for="item_weight">Enter Item Weight:
+                    <input type="number"  step="0.01" id="item_weight" placeholder="Enter Item Weight" name="item_weight">
+                </label>
+
+                <label for="item_categories">Enter Item Categories:
+                    <input type="text" id="item_categories" placeholder="Enter Item Categories (eg: 1 4 28)" name="item_categories">
+                </label>
+                <input type="submit" value="Submit">
+            </form>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

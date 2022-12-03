@@ -1,0 +1,120 @@
+<html>
+<h2>404 Online Auction House!</h2>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {font-family: Arial, Helvetica, sans-serif;}
+        /* form {border: 3px solid #f1f1f1;} */
+        input[type=text], input[type=password], input[type=tel], input[type=email], input[type=date] {
+            width: 100%;
+            padding: 12px 20px;
+            margin: 8px 0;
+            display: inline-block;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+
+        input[type="submit"] {
+            background-color: #04AA6D;
+            color: white;
+            padding: 14px 20px;
+            margin: 8px 0;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        input[type="submit"]:hover {
+            opacity: 0.5;
+        }
+
+        .container{
+            padding: 16px;
+        }
+
+        .column {
+            float: left;
+            padding: 10px;
+        }
+
+        .left, .right {
+            width: 32%;
+        }
+
+        .middle {
+            width: 25%;
+        }
+
+        .row:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+
+    </style>
+    <script>
+        var check = function() {
+            if (document.getElementById('password').value == document.getElementById('confirm_password').value) {
+                document.getElementById('message').style.color = 'green';
+                document.getElementById('message').innerHTML = 'Passwords match';
+            } else {
+                document.getElementById('message').style.color = 'red';
+                document.getElementById('message').innerHTML = 'Passwords do not match';
+            }
+        }
+    </script>
+</head>
+<body>
+
+<h3>Sign Up</h3>
+
+
+<div class="row">
+    <div class="column middle">
+        <div class="container">
+            <form name="signup-form" action="/signUp_User" method="post">   <!-- post api-->
+                <label for="user_name">Enter a username:
+                    <input type="text" id = "user_name" placeholder="Enter a User Name" name="user_name" required>
+                </label>
+
+                <label for="first_name">Enter your first name:
+                    <input type="text" id="first_name" placeholder="Enter your First Name" name="first_name" required>
+                </label>
+
+                <label for="last_name">Enter your last name:
+                    <input type="text" id="last_name" placeholder="Enter your Last Name" name="last_name" required>
+                </label>
+
+                <label for="password">Enter a password:
+                    <input type="password" id="password" placeholder="Enter a Password" name="password" onkeyup="check();" required>
+                </label>
+
+                <label for="confirm_password">Re-enter your password:
+                    <input type="password" name="confirm_password" id="confirm_password" placeholder="Re-enter your Password" onkeyup="check();" required/>
+                    <div id="message"></div>
+                </label>
+
+                <label for="date_of_birth">Enter your date of birth:
+                    <input type="date" id="date_of_birth" placeholder="Enter your date of birth" name="date_of_birth" required>
+                </label>
+
+                <label for="address">Enter your address:
+                    <input type="text" id="address" placeholder="Enter your address" name="address" required>
+                </label>
+
+                <label for="email">Enter your email ID:
+                    <input type="email" id="email" placeholder="Enter your email ID" name="email" required>
+                </label>
+
+                <label for="phone_number">Enter your phone number:
+                    <input type="tel" id = "phone_number" placeholder="Enter your phone number" name="phone_number" pattern="[0-9]{10}" required>
+                </label>
+
+                <input type="submit" value="Submit">
+            </form>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

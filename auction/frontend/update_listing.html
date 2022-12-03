@@ -1,0 +1,104 @@
+<html>
+<h2>404 Online Auction House!</h2>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {font-family: Arial, Helvetica, sans-serif;}
+        /* form {border: 3px solid #f1f1f1;} */
+        input[type=text], input[type=datetime-local], input[type=number] {
+            width: 100%;
+            padding: 12px 20px;
+            margin: 8px 0;
+            display: inline-block;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+
+        input[type="submit"] {
+            background-color: #04AA6D;
+            color: white;
+            padding: 14px 20px;
+            margin: 8px 0;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        input[type="submit"]:hover {
+            opacity: 0.5;
+        }
+
+        .container{
+            padding: 16px;
+        }
+
+        .column {
+            float: left;
+            padding: 10px;
+        }
+
+        .left, .right {
+            width: 32%;
+        }
+
+        .middle {
+            width: 25%;
+        }
+
+        .row:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+
+    </style>
+
+<h3>Update Listing</h3>
+
+<div class="row">
+    <div class="column middle">
+        <div class="container">
+            <form action="/update_listing.php" method="post">   <!-- post api-->
+                <label for="listing_id">Enter the ID of the listing you would like to update:
+                    <input type="number" id = "listing_id" placeholder="Enter Listing ID" name="listing_id" required>
+                </label>
+
+                <label for="user_id">Enter your User ID:
+                    <input type="number" id = "user_id" placeholder="Enter User ID" name="user_id" required>
+                </label>
+
+                <label for="listing_name">New name?:
+                    <input type="text" id = "listing_name" placeholder="Enter new name" name="listing_name">
+                </label>
+
+                <label for="description">New description?:
+                    <input type="text" id = "description" placeholder="Enter new description" name="description">
+                </label>
+
+                <label for="starting_price">New starting price?:
+                    <input type="number" id = "starting_price" placeholder="Enter new price" name="starting_price">
+                </label>
+
+                <label for="increment">New bid increment?:
+                    <input type="number" id = "increment" placeholder="Enter new increment" name="increment">
+                </label>
+
+                <label for="start_time">New start time?:
+                    <input type="datetime-local" placeholder="yyyy-mm-dd hh:mm:ss" id="start_time" name="start_time">
+                </label>
+
+                <label for="end_time">New end time?:
+                    <input type="datetime-local" placeholder="yyyy-mm-dd hh:mm:ss" id="end_time" name="end_time">
+                </label>
+
+                <label for="endgame">New bid closing alert time?:
+                    <input type="datetime-local" placeholder="yyyy-mm-dd hh:mm:ss" id="endgame" name="endgame">
+                </label>
+
+            </form>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
