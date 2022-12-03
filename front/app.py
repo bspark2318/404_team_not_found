@@ -44,6 +44,16 @@ def updateUser():
 def receiveSupport():
     return render_template('receiveSupport.html')
 
+@app.route('/loginUser', methods=['POST'])
+def loginUser():
+    form = request.form
+    params = {
+        'user_name': form['uname'],
+        'password': form['psw']
+    }
+    resp = requests.post("http://service.user:5000/login",params=params)
+    return resp.json()
+
 if __name__ == "__main__":
     # app.run()
     port = int(os.environ.get('PORT', 5000))

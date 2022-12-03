@@ -202,8 +202,35 @@ def receiveSupport():
     pass
 
 
+@app.route('/login',methods=['POST'])
 def login():
-    pass
+    user_name_input = request.args.get('user_name')
+    password_input = request.args.get('password')
+    user = User_class.objects(user_name=user_name_input)
+    if not user:
+        return jsonify({
+            "status_code": "400",
+            "detail": {
+                "error": "Error"
+            }
+        })
+        # return 'error'
+    elif user[0].password != password_input:
+        return jsonify({
+            "status_code": "400",
+            "detail": {
+                "error": "Error"
+            }
+        })
+        # return 'error'
+    else:
+        return jsonify({
+            "status_code": "200",
+            "detail": {
+                "user_id": user[0].user_id
+            }
+        })
+        # return 'success'
 
 
 def logout():
