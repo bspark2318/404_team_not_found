@@ -125,16 +125,6 @@ services:
     volumes:
       - /Users/user/data/mongo/auction
 
-
-  # auction_db:
-  #   image: mongo:latest
-  #   container_name: auction_db
-  #   ports:
-  #     - "27021:27017"
-  #   volumes:
-  #     - /Users/user/data/mongo/auction
-
-
   front:
     build: ./front/.
     container_name: frontend_service
