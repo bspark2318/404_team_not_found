@@ -1,17 +1,22 @@
 version: "3.7"
 
 services:
+
   notification:
-    build: ./notification/.  
+    build: ./notification/.
     container_name: notification_service
-    environment: 
+    environment:
       - MONGODB_CONNSTRING=mongodb://notification_db
     ports:
       - "5000:5000"
-  
+    networks:
+      default:
+        aliases:
+          - service.notification
+
   notification_db:
-    image: mongo:latest 
-    ports: 
+    image: mongo:latest
+    ports:
       - "27017:27017"
     container_name: notification_db 
     volumes: 
@@ -120,3 +125,22 @@ services:
     volumes:
       - /Users/user/data/mongo/auction
 
+
+  # auction_db:
+  #   image: mongo:latest
+  #   container_name: auction_db
+  #   ports:
+  #     - "27021:27017"
+  #   volumes:
+  #     - /Users/user/data/mongo/auction
+
+
+  front:
+    build: ./front/.
+    container_name: frontend_service
+    ports:
+      - "5005:5000"
+    networks:
+      default:
+        aliases:
+          - service.frontend

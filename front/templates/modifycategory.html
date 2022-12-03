@@ -1,0 +1,94 @@
+<html>
+<h2>404 Online Auction House!</h2>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {font-family: Arial, Helvetica, sans-serif;}
+        /* form {border: 3px solid #f1f1f1;} */
+        input[type=text], input[type=password], input[type=tel], input[type=email], input[type=date], input[type=number] {
+            width: 100%;
+            padding: 12px 20px;
+            margin: 8px 0;
+            display: inline-block;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+
+        input[type="submit"] {
+            background-color: #04AA6D;
+            color: white;
+            padding: 14px 20px;
+            margin: 8px 0;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        input[type="submit"]:hover {
+            opacity: 0.5;
+        }
+
+        .container{
+            padding: 16px;
+        }
+
+        .column {
+            float: left;
+            padding: 10px;
+        }
+
+        .left, .right {
+            width: 32%;
+        }
+
+        .middle {
+            width: 25%;
+        }
+
+        .row:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+
+    </style>
+    <script>
+        var check = function() {
+            if (document.getElementById('password').value == document.getElementById('confirm_password').value) {
+                document.getElementById('message').style.color = 'green';
+                document.getElementById('message').innerHTML = 'Passwords match';
+            } else {
+                document.getElementById('message').style.color = 'red';
+                document.getElementById('message').innerHTML = 'Passwords do not match';
+            }
+        }
+    </script>
+</head>
+<body>
+
+<h3>Modify Category</h3>
+
+<div class="row">
+    <div class="column middle">
+        <div class="container">
+            <form action="/signUp_page.php" method="post">   <!-- post api-->
+                <label for="category_id">Enter Category ID:
+                    <input type="number" id = "category_id" placeholder="Enter Category ID" name="category_id" required>
+                </label>
+
+                <label for="category_name">Enter Category Name:
+                    <input type="text" id = "category_name" placeholder="Enter Category Name" name="category_name">
+                </label>
+
+                <label for="category_desc">Enter Category Description:
+                    <input type="text" id="category_desc" placeholder="Enter Category Description" name="category_desc">
+                </label>
+
+                <input type="submit" value="Submit">
+            </form>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
