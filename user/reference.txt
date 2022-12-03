@@ -1,0 +1,17 @@
+version: '3.8'
+services:
+  user:
+    build: .
+    container_name: user_service
+    environment:
+      - MONGODB_CONNSTRING=mongodb://user_db
+    ports:
+      - "5000:5000"
+
+  user_mongodb:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    container_name: user_db
+    volumes:
+      - /data/db
