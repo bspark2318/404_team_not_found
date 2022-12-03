@@ -434,14 +434,14 @@ class AuctionService:
             payout_details['cost'] = amount
 
 
-        def view_user_bids(self, user_id):
-            high_bids = []
-            listings = list(self.db.find({'bid_list':user_id}, {'_id': False, 'listing_id': 1, 'listing_name': 1, 'bid_list':1}))
-            for listing in listings:
-                for bid in listing['bid_list']
-                    if bid[0] == user_id:
-                        high_bids.append(bid)
-                        break
+    def view_user_bids(self, user_id):
+        high_bids = []
+        listings = list(self.db.find({'bid_list':user_id}, {'_id': False, 'listing_id': 1, 'listing_name': 1, 'bid_list':1}))
+        for listing in listings:
+            for bid in listing['bid_list']
+                if bid[0] == user_id:
+                    high_bids.append(bid)
+                    break
             
             for i, bid in enumerate(high_bids):
                 _, amount, timestamp = bid
@@ -562,8 +562,7 @@ class AuctionService:
         
         return True
     
-    
-                
+            
     def alert_out_bid(self, prior_leader, prior_bid, highest_bid, listing_id, listing_name):
         
         post_body = {}
