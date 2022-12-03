@@ -36,8 +36,13 @@ def home():
 def signUp():
     return render_template('signUp.html')
 
+@app.route('/updateUser')
+def updateUser():
+    return render_template('updateUser.html')
 
-
+@app.route('/receiveSupport')
+def receiveSupport():
+    return render_template('receiveSupport.html')
 
 if __name__ == "__main__":
     # app.run()
