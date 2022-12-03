@@ -40,6 +40,18 @@ def signUp():
 def createitem():
     return render_template('createitem.html')
 
+@app.route('/modifyitem')
+def modifyitem():
+    return render_template('modifyitem.html')
+
+@app.route('/createcategory')
+def createcategory():
+    return render_template('createcategory.html')
+
+@app.route('/modifycategory')
+def modifycategory():
+    return render_template('modifycategory.html')
+
 @app.route('/updateUser')
 def updateUser():
     return render_template('updateUser.html')

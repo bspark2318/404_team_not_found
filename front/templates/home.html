@@ -6,7 +6,7 @@
         body {font-family: Arial, Helvetica, sans-serif;}
         /* form {border: 3px solid #f1f1f1;} */
         
-        input[type=text], input[type=password] {
+        input[type=text], input[type=password], input[type=number] {
           width: 100%;
           padding: 12px 20px;
           margin: 8px 0;
@@ -73,8 +73,41 @@
           opacity: 0.8;
         }
 
+        button[name="cat"] {
+          background-color: #43a7f4;
+          color: white;
+          padding: 14px 20px;
+          margin: 8px 0;
+          border: none;
+          cursor: pointer;
+          width: 100%;
+        }
+        
+        button[name="categorize"]:hover {
+          opacity: 0.8;
+        }
+
+        button[name="categorize"] {
+          background-color: #43f4d7;
+          color: white;
+          padding: 14px 20px;
+          margin: 8px 0;
+          border: none;
+          cursor: pointer;
+          width: 100%;
+        }
+        
+        button[name="cat"]:hover {
+          opacity: 0.8;
+        }
+
         .container{
           padding: 16px;
+        }
+
+        hr {
+        height: 2px;
+        background: black; 
         }
 
         .column {
@@ -121,7 +154,26 @@
                       <input type="number" placeholder="Enter Item ID" name="itemId" required>
                       <button name="item">Delete Item</button>
                     </form>
-                    <button name="item">Categorize Item</button>
+
+                    <hr>
+
+                    <form action="/action_page.php" method="post">   <!-- post api-->
+                      <label for="itemId"><b>Enter Item ID for the item you want to categorize:</b></label>
+                      <input type="number" placeholder="Enter Item ID" name="itemId" required>
+                      <label for="catId"><b>Enter Category ID for categorizing the item:</b></label>
+                      <input type="number" placeholder="Enter Category ID" name="catId" required>
+                      <button name="categorize">Categorize Item</button>
+                    </form>
+
+                    <hr>
+
+                    <button name="cat">Create Category</button>
+                    <button name="cat">Modify Category</button>
+                    <form action="/action_page.php" method="post">   <!-- post api-->
+                      <label for="catId"><b>Enter Category ID of the category you want to delete:</b></label>
+                      <input type="number" placeholder="Enter Category ID" name="catId" required>
+                      <button name="cat">Delete Category</button>
+                    </form>
                 </div>
             </div>
 
@@ -129,7 +181,7 @@
                 <div class="container">
                     <form action="/action_page.php" method="post">   <!-- post api-->
                             <label for="itemId"><b>Enter Item ID and perform one of the operations:</b></label>
-                            <input type="number" placeholder="Enter Item ID" name="itemId" required>
+                            <input type="number" placeholder="Enter Item ID" id="itemId" name="itemId" required>
                             <button name="cart_auction">Add to Cart</button>
                             <button name="cart_auction">Delete from Cart</button>
                             <button name="cart_auction">Add to Watchlist</button>
