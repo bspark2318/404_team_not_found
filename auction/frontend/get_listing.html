@@ -5,7 +5,7 @@
     <style>
         body {font-family: Arial, Helvetica, sans-serif;}
         /* form {border: 3px solid #f1f1f1;} */
-        input[type=number], input[type=password] {
+        input[type=number]{
             width: 100%;
             padding: 12px 20px;
             margin: 8px 0;
@@ -52,19 +52,6 @@
         }
 
     </style>
-    <script>
-        var check = function() {
-            if (document.getElementById('password').value == document.getElementById('confirm_password').value) {
-                document.getElementById('message').style.color = 'green';
-                document.getElementById('message').innerHTML = 'Passwords match';
-            } else {
-                document.getElementById('message').style.color = 'red';
-                document.getElementById('message').innerHTML = 'Passwords do not match';
-            }
-        }
-    </script>
-</head>
-<body>
 
 <h3>View Listing</h3>
 
