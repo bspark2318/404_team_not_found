@@ -64,7 +64,9 @@ def create_app(test_config=None):
     @app.route('/create_listing', methods=["POST"])
     def create_listing():
         payload = request.json
+        listing_id = payload['listing_id']
         item_details = payload['item_details']
+        #request to item service for item details
         
         listing = service.handle_create_listing(item_details)
         if listing:
@@ -77,6 +79,16 @@ def create_app(test_config=None):
             response = create_response(400)
         return response
     
+# params = {
+#             "item_name": "hello",
+#             "item_description": "desc",
+#             "item_price": 123,
+#             "item_weight": 122,0
+#             "item_categories": [1, 3, 5]   
+#         }
+#         resp = requests.post(
+#             "http://service.item:5000/getItem", listing_id)
+
 
     @app.route('/get_listing', methods=["GET"])
     def get_listing():
