@@ -60,43 +60,10 @@ def signUp():
     first_name = request.args.get('first_name')
     last_name = request.args.get('last_name')
     password = request.args.get('password')
-    try:
-        date_of_birth = list(map(int, request.args.get('date_of_birth').split("-")))
-    except ValueError:
-        # print("Date of birth should have only integer values. ")
-        return jsonify({
-            "status_code": "400",
-            "detail": {
-                "error" : "Date of birth should have only integer values"
-            }
-        })
-    except IndexError:
-        # print("Date of birth should have integer values separated by '-'")
-        return jsonify({
-            "status_code": "400",
-            "detail": {
-                "error" : "Date of birth should have integer values separated by '-'"
-            }
-        })
-
-    try:
-        date_obj = datetime.datetime(int(date_of_birth[2]), int(date_of_birth[0]), int(date_of_birth[1]))
-    except ValueError:
-        # print("Date of birth does not have valid integer values. ")
-        return jsonify({
-            "status_code": "400",
-            "detail": {
-                "error" : "Date of birth does not have valid integer values."
-            }
-        })
-    except IndexError:
-        # print("Date of birth should have integer values separated by '-'")
-        return jsonify({
-            "status_code": "400",
-            "detail": {
-                "error" : "Date of birth should have integer values separated by '-'"
-            }
-        })
+    print(request.args.get('date_of_birth'))
+    print(type(request.args.get('date_of_birth')))
+    date_of_birth = list(map(int, request.args.get('date_of_birth').split("-")))
+    date_obj = datetime.datetime(int(date_of_birth[0]), int(date_of_birth[1]), int(date_of_birth[2]))
 
     phone_number = request.args.get('phone_number')
     if not User_class().isint(phone_number) or len(phone_number) != 10:
@@ -369,27 +336,12 @@ def updateInfo():
             }
         })
 
-    try:
-        if request.args.get('date_of_birth') == "":
-            old_date_obj = User_class.objects(user_id=user_id_input)[0].date_of_birth
-        else:
-            date_obj = datetime.datetime(int(date_of_birth[2]), int(date_of_birth[0]), int(date_of_birth[1]))
-    except ValueError:
-        # print("Date of birth does not have valid integer values. ")
-        return jsonify({
-            "status_code": "400",
-            "detail": {
-                "error" : "Date of birth does not have valid integer values."
-            }
-        })
-    except IndexError:
-        # print("Date of birth should have integer values separated by '-'")
-        return jsonify({
-            "status_code": "400",
-            "detail": {
-                "error" : "Date of birth should have integer values separated by '-'"
-            }
-        })
+    if request.args.get('date_of_birth') == "":
+        old_date_obj = User_class.objects(user_id=user_id_input)[0].date_of_birth
+    else:
+        date_of_birth = list(map(int, request.args.get('date_of_birth').split("-")))
+        date_obj = datetime.datetime(int(date_of_birth[0]), int(date_of_birth[1]), int(date_of_birth[2]))
+
     if request.args.get('date_of_birth') == "":
         User_class.objects(user_id=user_id_input).update_one(set__date_of_birth=old_date_obj)
     else:
