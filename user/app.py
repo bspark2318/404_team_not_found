@@ -59,6 +59,7 @@ def signUp():
     user_name = request.args.get('user_name')
     first_name = request.args.get('first_name')
     last_name = request.args.get('last_name')
+    password = request.args.get('password')
     try:
         date_of_birth = list(map(int, request.args.get('date_of_birth').split("-")))
     except ValueError:
@@ -116,6 +117,7 @@ def signUp():
     u.user_name = user_name
     u.first_name = first_name
     u.last_name = last_name
+    u.password = password
     u.date_of_birth = date_obj
     u.phone_number = phone_number
     u.address = address
@@ -226,6 +228,7 @@ def updateInfo():
     update_email = False
     update_date_of_birth = False
     update_phone_number = False
+    update_password = False
 
     new_user_name = request.args.get('user_name')
     old_user_name = User_class.objects(user_id=user_id_input)[0].user_name
@@ -269,6 +272,21 @@ def updateInfo():
             "status_code": "400",
             "detail": {
                 "error" : "New last name is not valid!"
+            }
+        })
+
+    new_password = request.args.get('password')
+    old_password = User_class.objects(user_id=user_id_input)[0].password
+    if new_password == "":
+        User_class.objects(user_id=user_id_input).update_one(set__password=old_password)
+    elif old_password != new_password:
+        update_password = True
+        # User_class.objects(user_id=user_id_input).update_one(set__address=new_address)
+    else:
+        return jsonify({
+            "status_code": "400",
+            "detail": {
+                "error" : "New password is not valid!"
             }
         })
 
@@ -390,6 +408,14 @@ def updateInfo():
         User_class.objects(user_id=user_id_input).update_one(set__date_of_birth=date_obj)
     if update_phone_number:
         User_class.objects(user_id=user_id_input).update_one(set__phone_number=new_phone_number)
+    if update_password:
+        User_class.objects(user_id=user_id_input).update_one(set__password=new_password)
+
+    if not update_user_name and not update_last_name and not update_first_name and not update_address and not update_email and not update_date_of_birth and not update_phone_number and not update_password:
+        return jsonify({
+            "status_code": "200",
+            "detail": "No updates were made"
+        })
 
     user = User_class.objects(user_id=user_id_input)[0]
     return jsonify({
@@ -526,6 +552,103 @@ def deleteItemFromCart():
 
 
 
+@app.route('/deleteItemFromWatchList', methods=['DELETE'])
+def deleteItemFromWatchList():
+    user_id_input = request.args.get('user_id')  # check if user id is int
+    if not User_class.objects(user_id=user_id_input):
+        return jsonify({
+            "status_code": "400",
+            "detail": {
+                "error" : "The user id that you entered as input does not exist!"
+            }
+        })
+
+    item_id_input = request.args.get('item_id')
+    if not User_class().isint(item_id_input):
+        return jsonify({
+            "status_code": "400",
+            "detail": {
+                "error" : "Item ID is not a valid integer!"
+            }
+        })
+
+    item_id_input = int(item_id_input)
+
+    u = User_class.objects(user_id=user_id_input)[0]
+    if item_id_input in u.watchlist:
+        u.update(pull__watchlist=item_id_input)
+        u.save()
+        return jsonify({
+            "status_code": "200",
+            "detail": "Item deleted from the user's watchlist!"
+        })
+    else:
+        return jsonify({
+            "status_code": "400",
+            "detail": {
+                "error": "Item does not exist in the user's watchlist!"
+            }
+        })
+
+
+
+@app.route('/viewWatchList', methods=['GET'])
+def viewWatchList():
+    user_id_input = request.args.get('user_id')  # check if user id is int
+    if not User_class.objects(user_id=user_id_input):
+        return jsonify({
+            "status_code": "400",
+            "detail": {
+                "error" : "The user id that you entered as input does not exist!"
+            }
+        })
+
+    u = User_class.objects(user_id=user_id_input)[0]
+    if u.watchlist:
+        return jsonify({
+            "status_code": "200",
+            "detail": {
+                "watchlist": u.watchlist
+            }
+        })
+    else:
+        return jsonify({
+            "status_code": "400",
+            "detail": {
+                "error": "User's watchlist is empty!"
+            }
+        })
+
+
+
+@app.route('/viewCart', methods=['GET'])
+def viewCart():
+    user_id_input = request.args.get('user_id')  # check if user id is int
+    if not User_class.objects(user_id=user_id_input):
+        return jsonify({
+            "status_code": "400",
+            "detail": {
+                "error" : "The user id that you entered as input does not exist!"
+            }
+        })
+
+    u = User_class.objects(user_id=user_id_input)[0]
+    if u.cart:
+        return jsonify({
+            "status_code": "200",
+            "detail": {
+                "cart": u.cart
+            }
+        })
+    else:
+        return jsonify({
+            "status_code": "400",
+            "detail": {
+                "error": "User's cart is empty!"
+            }
+        })
+
+
 def checkout():
     # send details to payment processing
     # send user id, cart to payment processing
@@ -538,13 +661,14 @@ class User_class(db.Document):
     user_name = db.StringField(required=True)
     first_name = db.StringField(required=True)
     last_name = db.StringField(required=True)
+    password = db.StringField(required=True)
     date_of_birth = db.DateTimeField(required=True)
     phone_number = db.IntField(required=True)
     address = db.StringField(required=True)
     email = db.StringField(required=True)
     suspendStatus = db.BooleanField(required=False)
     adminStatus = db.BooleanField(required=False)
-    cart = db.ListField(required=False)
+    cart = db.ListField(required=False, default=[])
     watchlist = db.ListField(required=False, default=[])
 
     meta = {
@@ -558,6 +682,7 @@ class User_class(db.Document):
             "user_name": self.user_name,
             "first_name": self.first_name,
             "last_name": self.last_name,
+            "password": self.password,
             "date_of_birth": self.date_of_birth,
             "phone_number": self.phone_number,
             "address": self.address,
