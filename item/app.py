@@ -30,8 +30,13 @@ db.init_app(app)
 
 
 @app.route('/')
-def hello_world():
+def home():
     return 'Item Microservice'
+
+
+@app.route('/hello_world', methods=['POST', 'GET'])
+def hello_world():
+    return 'Hello World!'
 
 
 def isint(num):
