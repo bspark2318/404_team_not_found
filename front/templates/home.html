@@ -44,6 +44,21 @@
           opacity: 0.8;
         }
 
+        button[name="admin"] {
+            background-color: #b52882;
+            color: white;
+            padding: 14px 20px;
+            margin: 8px 0;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            float: right;
+        }
+
+        button[name="admin"]:hover {
+            opacity: 0.8;
+        }
+
         button[name="cart_auction"] {
           background-color: #ebe40b;
           color: white;
@@ -179,31 +194,41 @@
 
             <div class="column middle">
                 <div class="container">
-                    <form action="/action_page.php" method="post">   <!-- post api-->
-                            <label for="itemId"><b>Enter Item ID and perform one of the operations:</b></label>
-                            <input type="number" placeholder="Enter Item ID" id="itemId" name="itemId" required>
-                            <button name="cart_auction">Add to Cart</button>
-                            <button name="cart_auction">Delete from Cart</button>
-                            <button name="cart_auction">Add to Watchlist</button>
-                            <button name="cart_auction">Delete from Watchlist</button>
-                            <button name="cart_auction">Add for Auction</button> 
-                            <button name="cart_auction">Flag Item</button>              
+                    <form action="/add_to_Cart" method="post">   <!-- post api-->
+                        <label for="itemId"><b>Enter Item ID and perform one of the operations:</b></label>
+                        <input type="number" placeholder="Enter Item ID" id="itemId" name="itemId" required>
+                        <button name="cart_auction" formaction="/add_to_Cart">Add to Cart</button>
+                        <button name="cart_auction" formaction="/delete_from_Cart">Delete from Cart</button>
+                        <button name="cart_auction" formaction="/add_to_Watchlist">Add to Watchlist</button>
+                        <button name="cart_auction" formaction="/delete_from_Watchlist">Delete from Watchlist</button>
+<!--                        Do the below as formaction in button-->
+                        <button name="cart_auction">Add for Auction</button>
+                        <button name="cart_auction">Flag Item</button>
                     </form>
                 </div>
             </div>
 
             <div class="column right">
                 <div class="container">
-                    <button name="user_admin">View Cart</button>
-                    <button name="user_admin">View Watchlist</button>
-                    <button name="user_admin">Look up User</button>
-                    <button name="user_admin">Update User</button>
-                    <button name="user_admin">Delete User</button>
+                    <a href="{{ url_for('viewWatchlist') }}"><button name="user_admin">View Watchlist</button></a>
+                    <a href="{{ url_for('viewCart') }}"><button name="user_admin">View Cart</button></a>
+                    <a href="{{ url_for('checkout') }}"><button name="user_admin">Checkout</button></a>
+                    <a href="{{ url_for('lookup_User') }}"><button name="user_admin">Look up User</button></a>
+                    <a href="{{ url_for('updateUser') }}"><button name="user_admin">Update User</button></a>
+                    <a href="{{ url_for('delete_User') }}"><button name="user_admin">Delete User</button></a>
                     <!-- <button name="user_admin">View Bids</button> -->
-                    <button name="user_admin">Receive Customer Support</button>
+                    <a href="{{ url_for('receiveSupport') }}"><button name="user_admin">Receive Customer Support</button></a>
                     <!-- if user_id.status == "admin" -->
-                    <!-- <button name="user_admin">Suspend User</button> ###########3input button -->
-                    <a href="{{ url_for('logoutUser') }}"><button name="user_admin">Log out</button></a>
+                    <hr>
+                    <form action="/suspend_user" method="post">   <!-- post api-->
+                        <label for="userId"><b>Enter User ID and perform one of the operations as an Admin:</b></label>
+                        <input type="number" placeholder="Enter User ID" id="userId" name="userId" required>
+                        <button name="admin" formaction="/suspend_user">Suspend User</button>
+                        <button name="admin" formaction="/unsuspend_user">Un-Suspend User</button>
+                        <button name="admin" formaction="/change_status_admin">Change user status to Admin</button>
+                    </form>
+                    <hr>
+                    <a href="{{ url_for('logoutUser') }}"><button name="search">Log out</button></a>
                 </div>
             </div>
         </div>

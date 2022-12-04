@@ -1,3 +1,5 @@
+import datetime
+
 import flask
 from flask_mongoengine import MongoEngine
 import requests
@@ -5,6 +7,7 @@ import os
 import json
 from flask import Flask, request, jsonify, session, flash, redirect, url_for, render_template
 from dotenv import load_dotenv
+import datetime
 
 db = MongoEngine()
 # connString = os.environ['MONGODB_CONNSTRING']   ### for docker uncomment
@@ -41,6 +44,28 @@ def search():
 def signUp():
     return render_template('signUp.html')
 
+@app.route('/signUp_User', methods=['POST'])
+def signUp_User():
+    form = request.form
+    params = {
+        # 'user_id': session['user'],
+        'user_name': form['user_name'],
+        'first_name': form['first_name'],
+        'last_name': form['last_name'],
+        'password': form['password'],
+        'date_of_birth': form['date_of_birth'],
+        'address': form['address'],
+        'email': form['email'],
+        'phone_number': form['phone_number'],
+        'admin_status': False
+    }
+    resp = requests.post("http://service.user:5000/signUp",params=params)
+    if resp.json()['status_code'] == "201":
+        # return resp.json()["detail"]
+        return redirect(url_for('login'))
+    else:
+        return resp.json()["detail"]
+
 @app.route('/createitem')
 def createitem():
     return render_template('createitem.html')
@@ -61,31 +86,11 @@ def modifycategory():
 def updateUser():
     return render_template('updateUser.html')
 
-@app.route('/receiveSupport')
-def receiveSupport():
-    return render_template('receiveSupport.html')
-
-@app.route('/loginUser', methods=['POST'])
-def loginUser():
+@app.route('/update_User', methods=['POST'])
+def update_User():
     form = request.form
     params = {
-        'user_name': form['uname'],
-        'password': form['psw']
-    }
-    resp = requests.post("http://service.user:5000/login",params=params)
-    if resp.json()['status_code'] == "200":
-        session['user'] = resp.json()["detail"]["user_id"]
-        return redirect(url_for('home'))
-    else:
-        # flash('Incorrect credentials')
-        return redirect(url_for('login'))
-
-
-@app.route('/signUp_User', methods=['POST'])
-def signUp_User():
-    form = request.form
-    params = {
-        # 'user_id': session['user'],
+        'user_id': session['user'],
         'user_name': form['user_name'],
         'first_name': form['first_name'],
         'last_name': form['last_name'],
@@ -95,13 +100,232 @@ def signUp_User():
         'email': form['email'],
         'phone_number': form['phone_number']
     }
-    resp = requests.post("http://service.user:5000/signUp",params=params)
-    if resp.json()['status_code'] == "200":
+    resp = requests.post("http://service.user:5000/updateInfo",params=params)
+    if resp.json()['status_code'] == "201":
         # return resp.json()["detail"]
-        return redirect(url_for('login'))
+        return resp.json()["detail"]
     else:
         return resp.json()["detail"]
 
+@app.route('/delete_User', methods=['POST','GET'])
+def delete_User():
+    params = {
+        'user_id': session['user'],
+    }
+    resp = requests.delete("http://service.user:5000/deleteUser",params=params)
+    return resp.json()
+    if resp.json()['status_code'] == "204":
+        # return resp.json()["detail"]
+        return resp.json()["detail"]
+    else:
+        return resp.json()["detail"]
+
+@app.route('/lookup_User', methods=['GET'])
+def lookup_User():
+    params = {
+        'user_id': session['user'],
+    }
+    resp = requests.get("http://service.user:5000/lookupUser",params=params)
+    if resp.json()['status_code'] == "200":
+        # return resp.json()["detail"]
+        return resp.json()["detail"]
+    else:
+        return resp.json()["detail"]
+
+
+@app.route('/suspend_user', methods=['POST'])
+def suspend_user():
+    form = request.form
+    params = {
+        'user_id_admin': session['user'],
+        'user_id': form['userId']
+    }
+    resp = requests.post("http://service.user:5000/suspendUser",params=params)
+    if resp.json()['status_code'] == "201":
+        # return resp.json()["detail"]
+        return resp.json()["detail"]
+    else:
+        return resp.json()["detail"]
+
+
+@app.route('/unsuspend_user', methods=['POST'])
+def unsuspend_user():
+    form = request.form
+    params = {
+        'user_id_admin': session['user'],
+        'user_id': form['userId']
+    }
+    resp = requests.post("http://service.user:5000/unsuspendUser",params=params)
+    if resp.json()['status_code'] == "201":
+        # return resp.json()["detail"]
+        return resp.json()["detail"]
+    else:
+        return resp.json()["detail"]
+
+
+@app.route('/change_status_admin', methods=['POST'])
+def change_status_admin():
+    form = request.form
+    params = {
+        'user_id_admin': session['user'],
+        'user_id': form['userId']
+    }
+    resp = requests.post("http://service.user:5000/changeAdminStatus",params=params)
+    if resp.json()['status_code'] == "201":
+        # return resp.json()["detail"]
+        return resp.json()["detail"]
+    else:
+        return resp.json()["detail"]
+
+
+@app.route('/receiveSupport')
+def receiveSupport():
+    return render_template('receiveSupport.html')
+
+@app.route('/receiveCustomerSupport_page', methods=['POST'])
+def receiveCustomerSupport_page():
+    form = request.form
+    resp = requests.get("http://service.user:5000/getEmailId",params={'user_id': session['user']})
+    email_id = resp.json()["detail"]["user_data"]
+    params = {
+        'user_id': session['user'],
+        'recipient': email_id,
+        'request': {
+            'title': form['title'],
+            'content': form['content']
+        },
+        'response': {
+            'title': 're: '+form['title'],
+            'content': 'You will receive your response in a couple of days. Thank you for your patience.'
+        },
+        'timestamp': datetime.datetime.now()
+    }
+    # CHECK THIS POST REQUEST ONCE
+    resp = requests.post("http://service.notification:5000/customer_support_response", data=params)
+    if resp.json()['status_code'] == "201":
+        # return resp.json()["detail"]
+        return resp.json()
+    else:
+        return resp.json()
+
+
+@app.route('/checkout', methods=['GET','POST'])
+def checkout():
+    params = {
+        'user_id': session['user'],
+    }
+    resp = requests.post("http://service.user:5000/checkout",params=params)
+    return resp.text
+    # if resp.json()['status_code'] == "200":
+    #     # return resp.json()["detail"]
+    #     return resp.json()["detail"]
+    # else:
+    #     return resp.json()["detail"]
+
+
+@app.route('/viewCart', methods=['GET'])
+def viewCart():
+    params = {
+        'user_id': session['user'],
+    }
+    resp = requests.get("http://service.user:5000/viewCart",params=params)
+    if resp.json()['status_code'] == "200":
+        # return resp.json()["detail"]
+        return resp.json()["detail"]
+    else:
+        return resp.json()["detail"]
+
+
+@app.route('/viewWatchlist', methods=['GET'])
+def viewWatchlist():
+    params = {
+        'user_id': session['user'],
+    }
+    resp = requests.get("http://service.user:5000/viewWatchList",params=params)
+    if resp.json()['status_code'] == "200":
+        # return resp.json()["detail"]
+        return resp.json()["detail"]
+    else:
+        return resp.json()["detail"]
+
+
+@app.route('/add_to_Cart', methods=['POST'])
+def add_to_Cart():
+    form = request.form
+    params = {
+        'user_id': session['user'],
+        'item_id': form['itemId']
+    }
+    resp = requests.post("http://service.user:5000/addItemToCart",params=params)
+    if resp.json()['status_code'] == "201":
+        # return resp.json()["detail"]
+        return resp.json()["detail"]
+    else:
+        return resp.json()["detail"]
+
+
+@app.route('/add_to_Watchlist', methods=['POST'])
+def add_to_Watchlist():
+    form = request.form
+    params = {
+        'user_id': session['user'],
+        'item_id': form['itemId']
+    }
+    resp = requests.post("http://service.user:5000/addItemToWatchList",params=params)
+    if resp.json()['status_code'] == "201":
+        # return resp.json()["detail"]
+        return resp.json()["detail"]
+    else:
+        return resp.json()["detail"]
+
+
+
+@app.route('/delete_from_Cart', methods=['POST','GET'])
+def delete_from_Cart():
+    form = request.form
+    params = {
+        'user_id': session['user'],
+        'item_id': form['itemId']
+    }
+    resp = requests.delete("http://service.user:5000/deleteItemFromCart",params=params)
+    return resp.json()
+    # if resp.json()['status_code'] == "200":
+    #     # return resp.json()["detail"]
+    #     return resp.json()["detail"]
+    # else:
+    #     return resp.json()["detail"]
+
+
+@app.route('/delete_from_Watchlist', methods=['POST','GET'])
+def delete_from_Watchlist():
+    form = request.form
+    params = {
+        'user_id': session['user'],
+        'item_id': form['itemId']
+    }
+    resp = requests.delete("http://service.user:5000/deleteItemFromWatchList",params=params)
+    return resp.json()
+    # if resp.json()['status_code'] == "200":
+    #     # return resp.json()["detail"]
+    #     return resp.json()["detail"]
+    # else:
+    #     return resp.json()["detail"]
+
+
+@app.route('/loginUser', methods=['POST'])
+def loginUser():
+    form = request.form
+    params = {
+        'user_name': form['uname'],
+        'password': form['psw']
+    }
+    resp = requests.post("http://service.user:5000/login",params=params)
+    if resp.json()['status_code'] == "201":
+        session['user'] = resp.json()["detail"]["user_id"]
+        return redirect(url_for('home'))
+    else:
+        # flash('Incorrect credentials')
+        return redirect(url_for('login'))
 
 
 @app.route('/logoutUser', methods=['POST','GET'])

@@ -8,20 +8,20 @@ from dotenv import load_dotenv
 # from flask_sqlalchemy import SQLAlchemy
 
 db = MongoEngine()
-# connString = os.environ['MONGODB_CONNSTRING']   ### for docker uncomment
+connString = os.environ['MONGODB_CONNSTRING']   ### for docker uncomment
 app = Flask(__name__)
 app.config["MONGODB_SETTINGS"] = [
     {
         "db": "item",
-        "host": "localhost",               ### comment if docker
-        # "host": connString,              ### comment if localhost
+        # "host": "localhost",               ### comment if docker
+        "host": connString,              ### comment if localhost
         "port": 27017,
         "alias": "core_item",
     },
     {
         "db": "category",
-        "host": "localhost",
-        # "host": connString,
+        # "host": "localhost",
+        "host": connString,
         "port": 27017,
         "alias": "core_category",
     }
