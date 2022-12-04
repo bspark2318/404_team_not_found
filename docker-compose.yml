@@ -21,10 +21,6 @@ services:
     container_name: notification_db 
     volumes: 
       - /Users/user/data/mongo/notification
-    networks:
-      default:
-        aliases:
-          - service.notification
 
   # payment_db:
   #   image: postgres
