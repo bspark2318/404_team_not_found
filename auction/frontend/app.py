@@ -253,7 +253,7 @@ def see_metrics():
     else:
         return resp.json()["detail"]
 
-@app.route('view_bids', methods=['GET'])
+@app.route('/view_bids', methods=['GET'])
 def view_bids():
     return render_template('view_bids.html')
 

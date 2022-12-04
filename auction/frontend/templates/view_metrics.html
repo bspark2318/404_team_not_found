@@ -5,7 +5,7 @@
     <style>
         body {font-family: Arial, Helvetica, sans-serif;}
         /* form {border: 3px solid #f1f1f1;} */
-        input[type=submit]{
+        input[type=datetime-local] {
             width: 100%;
             padding: 12px 20px;
             margin: 8px 0;
@@ -53,15 +53,20 @@
 
     </style>
 
-<h3>View Live Auctions</h3>
+<h3>View Metrics</h3>
 
 <div class="row">
     <div class="column middle">
         <div class="container">
-            <form action="/view_bids.php" method="get">   <!-- get api-->
-                <label for="user_id">See your bids:
-                    <input type="submit" value="See your bids">
+            <form action="/see_metrics" method="get">   <!-- get api-->
+                <label for="window_start"><b>Beginning of window:</b>
+                    <input type="datetime-local" placeholder="yyyy-mm-dd hh:mm:ss" id="window_start" name="window_start">
                 </label>
+
+                <label for="window_end"><b>End of window:</b>
+                    <input type="datetime-local" placeholder="yyyy-mm-dd hh:mm:ss" id="window_end" name="window_end">
+                </label>
+                <input type="submit" value="Submit">
             </form>
         </div>
     </div>

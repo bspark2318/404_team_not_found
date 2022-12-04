@@ -5,7 +5,7 @@
     <style>
         body {font-family: Arial, Helvetica, sans-serif;}
         /* form {border: 3px solid #f1f1f1;} */
-        input[type=list]{
+        input[type=number]{
             width: 100%;
             padding: 12px 20px;
             margin: 8px 0;
@@ -53,19 +53,16 @@
 
     </style>
 
-<h3>View Live Auctions</h3>
+<h3>View Listing</h3>
 
 <div class="row">
     <div class="column middle">
         <div class="container">
-            <form action="/see_live" method="get">   <!-- get api-->
-                <label for="sort">How would you like to sort the return?:
-                    <input list="sort" name="sort">
-                    <datalist id ="sort">
-                      <option value = "Nearest to end">
-                      <option value = "Furthest from end">
-                      <option value = "Earliest created">
+            <form action="/find_listing" method="get">   <!-- get api-->
+                <label for="listing_id"><b>Enter a listing ID:</b>
+                    <input type="number"  step="1" id="listing_id" placeholder="Listing ID" name="listing_id" required>
                 </label>
+                <input type="submit" value="Submit">
             </form>
         </div>
     </div>

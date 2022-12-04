@@ -53,16 +53,16 @@
 
     </style>
 
-<h3>Delete Listing</h3>
+<h3>Stop an Auction Early</h3>
 
 <div class="row">
     <div class="column middle">
         <div class="container">
-            <form action="/destroy_listing" method="delete">   <!-- delete api-->
-                <label for="listing_id">Enter a listing ID for deletion:
-                    <input type="number"  step="1" id="listing_id" placeholder="Listing ID" name="listing_id">
-                </label>
-
+            <form action="/halt_auction" method="post">   <!-- post api-->
+            <label for="listing_id"><b>Enter Listing ID of the auction you would like to stop:</b>
+                <input type="number" id = "listing_id" placeholder="Enter Listing ID" name="listing_id" required>
+            </label>
+            <input type="submit" value="Submit">
             </form>
         </div>
     </div>
