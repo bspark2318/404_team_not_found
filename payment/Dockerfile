@@ -1,5 +1,3 @@
-
-
 FROM python:3.8
 
 # set a directory for the app
@@ -15,4 +13,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 EXPOSE 5000
 
 # run the command
-CMD ["flask", "--app", "./__init__.py", "run"]
+CMD ["flask", "--app", "./__init__.py", "run", "--host", "0.0.0.0"]
