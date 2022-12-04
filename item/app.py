@@ -5,23 +5,24 @@ import os
 import json
 from flask import Flask, request, jsonify
 from dotenv import load_dotenv
+import sys
 # from flask_sqlalchemy import SQLAlchemy
 
 db = MongoEngine()
-# connString = os.environ['MONGODB_CONNSTRING']   ### for docker uncomment
+connString = os.environ['MONGODB_CONNSTRING']   ### for docker uncomment
 app = Flask(__name__)
 app.config["MONGODB_SETTINGS"] = [
     {
         "db": "item",
-        "host": "localhost",               ### comment if docker
-        # "host": connString,              ### comment if localhost
+        # "host": "localhost",               ### comment if docker
+        "host": connString,              ### comment if localhost
         "port": 27017,
         "alias": "core_item",
     },
     {
         "db": "category",
-        "host": "localhost",
-        # "host": connString,
+        # "host": "localhost",
+        "host": connString,
         "port": 27017,
         "alias": "core_category",
     }
@@ -61,18 +62,48 @@ def Categorize():
     '''
     Fucntion to add a category to an item
     '''
-    item_inp = request.args.get('item_id')
-    categorize_inp = request.args.get('category_id')
+    item_inp = int(request.args.get('item_id'))
+    categorize_inp = int(request.args.get('category_id'))
+
     if not isint(item_inp):
-        return jsonify({'error': 'Item Id has to be an integer'})
+        return jsonify({
+                "status_code": "400",
+                "detail": {
+                    "error" : "Item Id has to be an integer"
+                }
+            })
     if not isint(categorize_inp):
-        return jsonify({'error': 'Category Id has to be an integer'})
+        return jsonify({
+                "status_code": "400",
+                "detail": {
+                    "error" : "Category Id has to be an integer"
+                }
+            })
+
     presence_check = len(Item_class.objects(item_id=item_inp))
     if presence_check == 0:
-        return jsonify({'error': 'Such an item ID does not exist'})
+        return jsonify({
+                "status_code": "400",
+                "detail": {
+                    "error" : 'Such an item ID does not exist'
+                }
+            })
     presence_check = len(Category_class.objects(category_id=categorize_inp))
     if presence_check == 0:
-        return jsonify({'error': 'Such an category ID does not exist'})
+        return jsonify({
+                "status_code": "400",
+                "detail": {
+                    "error" : 'Such a category ID does not exist'
+                }
+            })
+
+    if not (Item_class.objects(item_id=item_inp)[0].item_owner == int(request.args.get('session_owner'))):
+        return jsonify({
+                "status_code": "400",
+                "detail": {
+                    "error" : "You are not the owner and cannot make this update"
+                }
+            })
 
     item_out = Item_class.objects(item_id=item_inp)[0]
     cat_out = Category_class.objects(category_id=categorize_inp)[0]
@@ -92,22 +123,43 @@ def Categorize():
 #FLAGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGg
 
 
-@app.route('/searchItemId', methods=['GET'])
+@app.route('/searchItemId', methods=['GET']) #### status code
 def Search_ItemID():
     '''
     Function to Search an item by the Item ID 
     '''
     search_inp = request.args.get('item_id')
     if not isint(search_inp):
-        return jsonify({'error': 'Item Id has to be an integer'})
+        return jsonify({
+                "status_code": "400",
+                "detail": {
+                    "error" : "Item Id has to be an integer"
+                }
+            })
     presence_check = len(Item_class.objects(item_id=search_inp))
     if presence_check == 0:
-        return jsonify({'error': 'Such an item ID does not exist'})
+        return jsonify({
+                "status_code": "400",
+                "detail": {
+                    "error" : 'Such an item ID does not exist'
+                }
+            })
+        
     search_out = Item_class.objects(item_id=search_inp)[0]
     if not search_out:
-        return jsonify({'error': 'Data not found'})
+        return jsonify({
+                "status_code": "400",
+                "detail": {
+                    "error" : 'Data not found'
+                }
+            })
     else:
-        return jsonify(search_out.to_json())
+        return jsonify({
+                "status_code": "200",
+                "detail": {
+                    "item_data" : search_out.to_json()
+                }
+            })
 
 
 @app.route('/searchItemName', methods=['GET'])       
@@ -118,12 +170,27 @@ def Search_ItemName():
     search_inp = request.args.get('item_name')
     presence_check = len(Item_class.objects(item_name=search_inp))
     if presence_check == 0:
-        return jsonify({'error': 'Such an item name does not exist'})
-    search_out = Item_class.objects(item_name=search_inp)
+        return jsonify({
+                "status_code": "400",
+                "detail": {
+                    "error" : 'Such an item name does not exist'
+                }
+            })
+    search_out = Item_class.objects(item_name=search_inp)[0]
     if not search_out:
-        return jsonify({'error': 'Data not found'})
+        return jsonify({
+                "status_code": "400",
+                "detail": {
+                    "error" : 'Data not found'
+                }
+            })
     else:
-        return jsonify(search_out.to_json())
+        return jsonify({
+                "status_code": "200",
+                "detail": {
+                    "item_data" : search_out.to_json()
+                }
+            })
 
 
 @app.route('/searchCategory', methods=['GET'])       
@@ -137,11 +204,21 @@ def Search_Category():
     presence_check = len(Category_class.objects(category_id=search_inp))
     if presence_check == 0:
         return jsonify({'error': 'Such a category ID does not exist'})
-    search_out = Category_class.objects(category_id=search_inp)
+    search_out = Category_class.objects(category_id=search_inp)[0]
     if not search_out:
-        return jsonify({'error': 'Data not found'})
+        return jsonify({
+                "status_code": "400",
+                "detail": {
+                    "error" : 'Data not found'
+                }
+            })
     else:
-        return search_out[0].to_json_cat()
+        return jsonify({
+                "status_code": "200",
+                "detail": {
+                    "item_data" : search_out.to_json_cat()
+                }
+            })
 
 
 @app.route('/searchCategoryId', methods=['GET'])
@@ -151,18 +228,38 @@ def Search_CategoryID():
     '''
     search_inp = request.args.get('category_id')
     if not isint(search_inp):
-        return jsonify({'error': 'Category Id has to be an integer'})
+        return jsonify({
+                "status_code": "400",
+                "detail": {
+                    "error" : "Category Id has to be an integer"
+                }
+            })
     presence_check = len(Category_class.objects(category_id=search_inp))
     if presence_check == 0:
-        return jsonify({'error': 'Such a category ID does not exist'})
+        return jsonify({
+                "status_code": "400",
+                "detail": {
+                    "error" : 'Such a category ID does not exist'
+                }
+            })
     search_out = Category_class.objects(category_id=search_inp)[0].category_items
     if not search_out:
-        return jsonify({'error': 'Data not found'})
+        return jsonify({
+                "status_code": "400",
+                "detail": {
+                    "error" : 'Data not found'
+                }
+            })
     else:
         final_op = []
         for i in search_out:
             final_op.append(Item_class.objects(item_id=i)[0].to_json())
-        return jsonify(final_op)
+        return jsonify({
+                "status_code": "200",
+                "detail": {
+                    "item_data" : final_op
+                }
+            })
 
 
 @app.route('/allCategories', methods=['GET'])
@@ -171,10 +268,23 @@ def Search_all_Categories():
     Search all existing categories
     '''
     search_out = Category_class.objects().all()
-    final_op = []
-    for i in search_out:
-        final_op.append(i.to_json_cat())
-    return jsonify(final_op)
+    if not search_out:
+        return jsonify({
+                "status_code": "400",
+                "detail": {
+                    "error" : 'Data not found'
+                }
+            })
+    else:
+        final_op = []
+        for i in search_out:
+            final_op.append(i.to_json_cat())
+        return jsonify({
+                "status_code": "200",
+                "detail": {
+                    "item_data" : final_op
+                }
+            })
 
 
 @app.route('/allItems', methods=['GET'])
@@ -183,10 +293,23 @@ def Search_all_Items():
     Search all existing items
     '''
     search_out = Item_class.objects().all()
-    final_op = []
-    for i in search_out:
-        final_op.append(i.to_json())
-    return jsonify(final_op)
+    if not search_out:
+        return jsonify({
+                "status_code": "400",
+                "detail": {
+                    "error" : 'Data not found'
+                }
+            })
+    else:
+        final_op = []
+        for i in search_out:
+            final_op.append(i.to_json())
+        return jsonify({
+                "status_code": "200",
+                "detail": {
+                    "item_data" : final_op
+                }
+            })
 
 
 @app.route('/createItem', methods=["POST"])
@@ -253,7 +376,8 @@ def CreateItem():
                     "error" : f"Category {str(i)} does not exist"
                 }
             })
-        
+
+    item_owner = request.args.get('item_owner')
         
     i = Item_class()
     i.item_id = item_id
@@ -265,7 +389,7 @@ def CreateItem():
     i.item_status = "BuyNow"
     i.item_flag = False
     i.item_flag_list = []
-    i.item_owner = -1
+    i.item_owner = item_owner
 
     i.save()
 
@@ -303,6 +427,15 @@ def DeleteItem():
                     "error" : "Such an item ID does not exist"
                 }
             })
+
+    if not (Item_class.objects(item_id=item_id_to_delete)[0].item_owner == int(request.args.get('session_owner'))):
+        return jsonify({
+                "status_code": "400",
+                "detail": {
+                    "error" : "You are not the owner and cannot make this delete"
+                }
+            })
+
     Item_class.objects().filter(item_id=item_id_to_delete).delete()
     return jsonify({
         "status_code": "200",
@@ -336,6 +469,14 @@ def UpdateItem():
                 "status_code": "400",
                 "detail": {
                     "error" : "Such an item ID does not exist"
+                }
+            })
+    
+    if not (Item_class.objects(item_id=item_id_to_update)[0].item_owner == int(request.args.get('session_owner'))):
+        return jsonify({
+                "status_code": "400",
+                "detail": {
+                    "error" : "You are not the owner and cannot make this update"
                 }
             })
 
@@ -427,6 +568,8 @@ def CreateCategory():
 
     category_description = request.args.get('category_description')
 
+    category_owner = request.args.get('category_owner')
+
     category_items = []
     
     c = Category_class()
@@ -434,6 +577,7 @@ def CreateCategory():
     c.category_name = category_name
     c.category_description = category_description 
     c.category_items = category_items
+    c.category_owner = category_owner
 
     c.save()
 
@@ -466,6 +610,15 @@ def DeleteCategory():
                     "error" : "Such a category ID does not exist"
                 }
             })
+
+    if not (Category_class.objects(category_id=category_id_to_delete)[0].category_owner == int(request.args.get('category_owner'))):
+        return jsonify({
+                "status_code": "400",
+                "detail": {
+                    "error" : "You are not the owner and cannot make this delete"
+                }
+            })
+
     Category_class.objects().filter(category_id=category_id_to_delete).delete()
     return jsonify({
         "status_code": "200",
@@ -497,6 +650,14 @@ def UpdateCategory():
                 "status_code": "400",
                 "detail": {
                     "error" : "Such a category ID does not exist"
+                }
+            })
+
+    if not (Category_class.objects(category_id=category_id_to_update)[0].category_owner == int(request.args.get('session_owner'))):
+        return jsonify({
+                "status_code": "400",
+                "detail": {
+                    "error" : "You are not the owner and cannot make this update"
                 }
             })
 
@@ -558,7 +719,9 @@ class Item_class(db.Document):
             "item_price": self.item_price,
             "item_description": self.item_description,
             "item_weight": self.item_weight,
-            "item_categories": self.item_categories
+            "item_categories": self.item_categories,
+            "item_owner": self.item_owner,
+            "item_status": self.item_status
         }
 
 
@@ -570,6 +733,7 @@ class Category_class(db.Document):
     category_name = db.StringField(required=True)
     category_description = db.StringField(required=False)
     category_items = db.ListField(required=False)
+    category_owner = db.IntField(required = True)
 
     meta = {
         'db_alias': 'core_category',
