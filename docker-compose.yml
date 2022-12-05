@@ -1,6 +1,34 @@
 version: "3.7"
 
 services:
+  payment_db:
+    image: postgres:13-alpine
+    container_name: payment_db 
+    restart: always
+    ports: 
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=ebay
+    volumes: 
+      - /Users/user/data/psql/payment
+    expose:
+      - 5432
+
+  payment:
+    build: ./payment/.  
+    container_name: payment_service
+    depends_on:
+      - payment_db
+    environment: 
+      - DATABASE_URL=postgresql://postgres:postgres@payment_db:5432/ebay
+    ports:
+      - "5000:5000"
+    networks:
+      default:
+        aliases:
+          - service.payment
 
   notification:
     build: ./notification/.
@@ -8,7 +36,7 @@ services:
     environment:
       - MONGODB_CONNSTRING=mongodb://notification_db
     ports:
-      - "5000:5000"
+      - "5001:5000"
     networks:
       default:
         aliases:
@@ -21,45 +49,10 @@ services:
     container_name: notification_db 
     volumes: 
       - /Users/user/data/mongo/notification
-
-  # payment_db:
-  #   image: postgres
-  #   restart: always
-  #   ports: 
-  #     - "5432:5432"
-  #   # environment:
-  #   #   # - POSTGRES_USER=polls
-  #   #   # - POSTGRES_PASSWORD=hearmeroar
-  #   #   # - POSTGRES_DB=polls_db
-  #   environment:
-  #     - POSTGRES_USER=postgres
-  #     - POSTGRES_PASSWORD=postgres
-  #   #   # - POSTGRES_DB=polls_db
-  #   container_name: payment_db 
-  #   volumes: 
-  #     - /Users/user/data/psql/payment
-
-
-  # payment:
-  #   build: ./payment/.  
-  #   container_name: payment_service
-  #   depends_on:
-  #     - "payment_db"
-  #   environment: 
-  #     - POSTGRESQL_CONNSTRING=postgres://postgres:postgres@payment_db:5432/postgres
-  #     # - POSTGRESQL_CONNSTRING=postgresql+psycopg2://payment_db:5432
-  #     # - POSTGRESQL_CONNSTRING=postgres://postgres:postgres@database:5432
-  #     # - POSTGRESQL_CONNSTRING=postgres://payment_db
-  #     # - POSTGRES_USER=postgres
-  #     # - POSTGRES_PASSWORD=postgres
-  #     # - DB_HOST=payment_db
-  #     # - DB_PORT=5432
-  #     # - DB_NAME=polls_db
-  #     # - DB_USER=polls
-  #     # - DB_PASSWORD=hearmeroar
-  #   ports:
-  #     - "5001:5000"
-  
+    networks:
+      default:
+        aliases:
+          - service.notification  
   
   itemservice:
     build: ./item/.

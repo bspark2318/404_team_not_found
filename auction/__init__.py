@@ -2,6 +2,7 @@ import os
 import sys
 import time
 import requests
+from random import randint
 from dotenv  import load_dotenv
 from datetime import datetime 
 from flask import Flask, Response, request, make_response, jsonify, json, abort
@@ -62,7 +63,7 @@ def create_app(test_config=None):
         return 'Auction Microservice'
     
 
-    @app.route('/create_listing', methods=["POST"])
+    @app.route('/create_listing', methods=["post"])
     def create_listing():
 
         payload = request.json
@@ -74,10 +75,13 @@ def create_app(test_config=None):
                 item_details[field] = payload[field]
 
         resp = requests.get(
-            "http://service.item:5000/Search_ItemID", listing_id)
+            "http://service.item:5000/searchItemId", {'item_id':listing_id})
+        
+        if not resp:
+            return create_response(404)
 
         for field in resp:
-            item_details[field] = payload[field]
+            item_details[field] = resp[field]
         
         listing = service.handle_create_listing(item_details)
 
@@ -467,18 +471,22 @@ class AuctionService:
 
         if listing['bid_list']:
             winner, amount, _ = listing['bid_list'][0]
-
-            user_details = requests.get(
-                "http://service.user:5000/lookupUser", winner
-            )
+            method_info = listing['method_info']
+            method_info = randint(1000000000000000, 9999999999999999)
             payout_details = {
                     'user_id': winner,
                     'total': amount,
+                    "cart_id": listing_id,
                     # 'seller': listing['seller'],
                     # 'seller_email': listing['seller_email'],
                     # 'item': listing['listing_id'],
-                    'payment_method':user_details['payment_method'],
-                    "cart_id": listing_id
+                    'payment_method': {
+                        "shipping_address": "Approved address",
+                        "billing_address": "Approved address",
+                        "method_info": method_info,
+                        "method": "card"
+                    }
+                    
                 }
 
             resp = requests.post(

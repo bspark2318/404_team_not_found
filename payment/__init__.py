@@ -1,8 +1,6 @@
 import os
-from dotenv import load_dotenv
 import time 
-from flask import Flask, Response, request, make_response, jsonify, json, abort
-import requests
+from flask import Flask, request, make_response, jsonify
 import psycopg2
 
 
@@ -13,23 +11,17 @@ def create_app(test_config=None):
         SECRET_KEY='dev',
         DATABASE=os.path.join(app.instance_path, 'flaskr.sqlite'),
     )
-    #
-    ## Make the database right here
     
-    load_dotenv()
-    connString = os.environ['POSTGRESQL_CONNSTRING']
-    # db_user = os.environ['POSTGRES_USER']
-    # db_password = os.environ['POSTGRES_PASSWORD']
-    ## PSQL
-    db_conn = psycopg2.connect(
-        host=connString,
-        
-        database="ebay",
-        # user=db_user, 
-        # password=db_password
-        # user=os.environ[''],
-        # password=os.environ['']
-    )
+    connString = os.environ['DATABASE_URL']
+    
+    while True:
+        try:
+            db_conn = psycopg2.connect(connString)
+        except Exception as e:
+            time.sleep(1)
+            print(e)
+            continue 
+        break;
     
     if test_config is None:
         # load the instance config, if it exists, when not testing
@@ -58,7 +50,7 @@ def create_app(test_config=None):
         response_json["message"] = message
         response_json["payload"] = response_payload
         response = make_response(jsonify(response_payload))
-        response.status_code = 200 if status else 400   
+        response.status_code = 201 if status else 400   
         return response
 
     # a simple page that says hello
@@ -82,7 +74,7 @@ def create_app(test_config=None):
         success = True if transaction_id else False
         message = "Successful payment for total of ${}.".format(total) if success else "Error encountered while processing payment for cart ID {}.".format(cart_id)
         
-        response = create_response(success, message, user_id=user_id, cart_id=cart_id, transaction_id=transaction_id, timestamp=None)
+        response = create_response(success, message, user_id=user_id, cart_id=cart_id, total=total, transaction_id=transaction_id, timestamp=None)
         return response
     
     @app.route('/view_transaction', methods=["POST"])
@@ -104,7 +96,26 @@ def create_app(test_config=None):
 class PaymentService:
     def __init__(self, conn):
         self.db = conn
-        
+        self.create_tables()
+    
+    def create_tables(self):
+        cursor = self.db.cursor() 
+        drop_table_query = "DROP TABLE IF EXISTS transactions;"
+        cursor.execute(drop_table_query)
+        create_table_query = """
+        CREATE TABLE transactions (
+                    transaction_id SERIAL PRIMARY KEY NOT NULL, 
+                    user_id VARCHAR(40) NOT NULL, 
+                    cart_id VARCHAR(40) NOT NULL, 
+                    total  NUMERIC(9, 2) NOT NULL, 
+                    method VARCHAR(40) NOT NULL, 
+                    transaction_time TIMESTAMP DEFAULT NOW());
+                    """
+        cursor.execute(create_table_query)
+        self.db.commit()
+        cursor.close()
+    
+    
     def verify_payment_info(self, user_id, cart_id, total, payment_method):
         if not user_id or not cart_id or not total:
             return False 
@@ -112,16 +123,10 @@ class PaymentService:
         if not payment_method:
             return False 
         
-        first_check_list = ["method", "method_detail"]
-        second_check_list = ["security_code", "holder_name", "billing_address"]
+        first_check_list = ["method", "method_info", "billing_address", "shipping_address"]
         for check in first_check_list:
             if check not in payment_method or not payment_method[check]:
                 return False 
-        for check in second_check_list:
-            if check not in payment_method["method_detail"] or not payment_method["method_detail"][check]:
-                return False
-        if "zipcode" not in payment_method["method_detail"]["billing_address"]:
-            return False 
         
         return True
     

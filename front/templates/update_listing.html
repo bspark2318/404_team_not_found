@@ -58,43 +58,39 @@
 <div class="row">
     <div class="column middle">
         <div class="container">
-            <form action="/update_listing.php" method="post">   <!-- post api-->
+            <form action="/modify_listing" method="post">   <!-- post api-->
                 <label for="listing_id">Enter the ID of the listing you would like to update:
                     <input type="number" id = "listing_id" placeholder="Enter Listing ID" name="listing_id" required>
                 </label>
 
-                <label for="user_id">Enter your User ID:
-                    <input type="number" id = "user_id" placeholder="Enter User ID" name="user_id" required>
-                </label>
-
-                <label for="listing_name">New name?:
+                <label for="listing_name"><b>New name?:</b>
                     <input type="text" id = "listing_name" placeholder="Enter new name" name="listing_name">
                 </label>
 
-                <label for="description">New description?:
+                <label for="description"><b>New description?:</b>
                     <input type="text" id = "description" placeholder="Enter new description" name="description">
                 </label>
 
-                <label for="starting_price">New starting price?:
+                <label for="starting_price"><b>New starting price?:</b>
                     <input type="number" id = "starting_price" placeholder="Enter new price" name="starting_price">
                 </label>
 
-                <label for="increment">New bid increment?:
+                <label for="increment"><b>New bid increment?:</b>
                     <input type="number" id = "increment" placeholder="Enter new increment" name="increment">
                 </label>
 
-                <label for="start_time">New start time?:
+                <label for="start_time"><b>New start time?:</b>
                     <input type="datetime-local" placeholder="yyyy-mm-dd hh:mm:ss" id="start_time" name="start_time">
                 </label>
 
-                <label for="end_time">New end time?:
+                <label for="end_time"><b>New end time?:</b>
                     <input type="datetime-local" placeholder="yyyy-mm-dd hh:mm:ss" id="end_time" name="end_time">
                 </label>
 
-                <label for="endgame">New bid closing alert time?:
+                <label for="endgame"><b>New bid closing alert time?:</b>
                     <input type="datetime-local" placeholder="yyyy-mm-dd hh:mm:ss" id="endgame" name="endgame">
                 </label>
-
+                <input type="submit" value="Submit">
             </form>
         </div>
     </div>
