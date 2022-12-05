@@ -136,7 +136,7 @@ def create_item():
     resp = requests.post("http://service.item:5000/createItem", params=params)
     # print(resp.text)
     # return resp.text
-    if resp.json()['status_code'] == "200":
+    if resp.json()['status_code'] == "201":
         return resp.json()["detail"]
         # return redirect(url_for('home'))
     else:
@@ -164,7 +164,7 @@ def modify_item():
 
     resp = requests.post("http://service.item:5000/updateItem", params=params)
 
-    if resp.json()['status_code'] == "200":
+    if resp.json()['status_code'] == "201":
         return resp.json()["detail"]
         # return redirect(url_for('home'))
     else:
@@ -180,7 +180,7 @@ def delete_item():
     }
     resp = requests.delete("http://service.item:5000/deleteItem", params=params)
 
-    if resp.json()['status_code'] == "200":
+    if resp.json()['status_code'] == "204":
         return resp.json()["detail"]
         # return redirect(url_for('home'))
     else:
@@ -202,7 +202,7 @@ def create_category():
     }
     resp = requests.post("http://service.item:5000/createCategory", params=params)
 
-    if resp.json()['status_code'] == "200":
+    if resp.json()['status_code'] == "201":
         return resp.json()["detail"]
         # return redirect(url_for('home'))
     else:
@@ -220,7 +220,7 @@ def modify_category():
     }
     resp = requests.post("http://service.item:5000/updateCategory", params=params)
 
-    if resp.json()['status_code'] == "200":
+    if resp.json()['status_code'] == "201":
         return resp.json()["detail"]
         # return redirect(url_for('home'))
     else:
@@ -241,7 +241,7 @@ def delete_category():
     }
     resp = requests.delete("http://service.item:5000/deleteCategory", params=params)
 
-    if resp.json()['status_code'] == "200":
+    if resp.json()['status_code'] == "204":
         return resp.json()["detail"]
         # return redirect(url_for('home'))
     else:
@@ -258,7 +258,7 @@ def categorize():
     }
     resp = requests.post("http://service.item:5000/categorize", params=params)
 
-    if resp.json()['status_code'] == "200":
+    if resp.json()['status_code'] == "201":
         return resp.json()["detail"]
         # return redirect(url_for('home'))
     else:
@@ -274,7 +274,7 @@ def pushAuction():
     }
     resp = requests.post("http://service.item:5000/pushToAuction", params=params)
 
-    if resp.json()['status_code'] == "200":
+    if resp.json()['status_code'] == "201":
         return resp.json()["detail"]
         # return redirect(url_for('home'))
     else:
@@ -289,6 +289,21 @@ def flagItem():
         'item_id': form['itemId'],
     }
     resp = requests.post("http://service.item:5000/flag", params=params)
+
+    if resp.json()['status_code'] == "201":
+        return resp.json()["detail"]
+        # return redirect(url_for('home'))
+    else:
+        return resp.json()["detail"]
+
+
+@app.route('/viewFlag', methods=['POST','GET'])
+def viewFlag():
+    params = {
+        'session_owner': session['user'],
+    }
+
+    resp = requests.get("http://service.item:5000/viewflag", params=params)
 
     if resp.json()['status_code'] == "200":
         return resp.json()["detail"]
