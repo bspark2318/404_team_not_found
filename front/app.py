@@ -265,6 +265,22 @@ def categorize():
         return resp.json()["detail"]
 
 
+@app.route('/pushAuction', methods=['POST','GET'])
+def categorize():
+    form = request.form
+    params = {
+        'session_owner': session['user'],
+        'item_id': form['itemId'],
+    }
+    resp = requests.post("http://service.item:5000/pushToAuction", params=params)
+
+    if resp.json()['status_code'] == "200":
+        return resp.json()["detail"]
+        # return redirect(url_for('home'))
+    else:
+        return resp.json()["detail"]
+
+
 @app.route('/updateUser')
 def updateUser():
     return render_template('updateUser.html')
@@ -290,6 +306,7 @@ def update_User():
         return resp.json()["detail"]
     else:
         return resp.json()["detail"]["error"]
+
 
 @app.route('/delete_User', methods=['POST','GET'])
 def delete_User():

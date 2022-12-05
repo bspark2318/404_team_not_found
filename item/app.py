@@ -690,7 +690,59 @@ def UpdateCategory():
             "category_id" : "Category Updated"
         }
     })
-    
+
+
+@app.route('/pushToAuction', methods=["POST"])
+def pushToAuction():
+    '''
+    Fucntion to change status of item to Auction and pust to Auction microservice
+    '''
+    item_id_to_push = request.args.get('item_id')
+    if not isint(item_id_to_push):
+        return jsonify({
+                "status_code": "400",
+                "detail": {
+                    "error" : "Item Id has to be an integer"
+                }
+            })
+    presence_check = len(Item_class.objects(item_id=item_id_to_push))
+    if presence_check == 0:
+        return jsonify({
+                "status_code": "400",
+                "detail": {
+                    "error" : "Such an item ID does not exist"
+                }
+            })
+
+    if not (Item_class.objects(item_id=item_id_to_push)[0].item_owner == int(request.args.get('session_owner'))):
+        return jsonify({
+                "status_code": "400",
+                "detail": {
+                    "error" : "You are not the owner and cannot complete this action"
+                }
+            })
+
+    Item_class.objects(item_id=item_id_to_push).update_one(set__item_status="Auction")
+#####################################
+    params = {
+        "item_details": Item_class.objects(item_id=item_id_to_push)[0].to_json(),
+        "status": False,
+        "increment": 5.0
+    }
+
+    # push to auction microservice
+    response = requests.post("http://service.auction:5000/ENDPOINT", params)
+
+    if response.json()['status_code'] == "200":
+        return response.json()["detail"]
+    else:
+        return response.json()["detail"]
+
+    # return jsonify({
+    #     "status_code": response.status_code,
+    #     "detail": response.text
+    # })
+######################################
 
 class Item_class(db.Document):
     '''
