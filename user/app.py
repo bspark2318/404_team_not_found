@@ -900,37 +900,24 @@ def checkout():
             
             json_params = json.dumps(params)            
             
-            u.cart = []
-            u.save()
+
             resp = requests.post("http://service.payment:5000/pay_for_cart", json=json_params)
             
             if resp.status_code == 201:
-                if len(items_not_in_cart) > 0:
-                    return jsonify({
-                        "status_code": "201",
-                        "detail": {
-                            "Items "+items_not_in_cart+" do not exist in the Item database and cannot be processed for checkout. All other items are checked out. Details: "+params
-                        }
-                    })
-                else:
-                    return jsonify({
-                        "status_code": "201",
-                        "detail": {
-                            "Items are checked out. Details: " + params
-                        }
-                    })
+                for i in u.cart:
+                    response = requests.delete("http://service.item:5000/deleteCartItem",params={'item_id': i})
+                    if response.json()['status_code'] != "204":
+                        print(response.json()['detail'])
+                u.cart = []
+                u.save()
+                return resp.text
             else:
-                return jsonify({
-                    "status_code": "404",
-                    "detail": {
-                        "error": "Error in checkout and payment processing"
-                    }
-                })
+                return resp.text
         else:
             return jsonify({
                 "status_code": "404",
                 "detail": {
-                    "error": "Total is zero! Checkout cannot be processed"
+                    "error": "Total is zero! Checkout cannot be processed!"
                 }
             })
     else:

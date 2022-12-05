@@ -344,7 +344,7 @@ def suspend_user():
         # return resp.json()["detail"]
         return resp.json()["detail"]
     else:
-        return resp.json()["detail"]["error"]
+        return resp.json()["detail"]
 
 
 @app.route('/unsuspend_user', methods=['POST'])
@@ -359,7 +359,7 @@ def unsuspend_user():
         # return resp.json()["detail"]
         return resp.json()["detail"]
     else:
-        return resp.json()["detail"]["error"]
+        return resp.json()["detail"]
 
 
 @app.route('/change_status_admin', methods=['POST'])
@@ -374,7 +374,7 @@ def change_status_admin():
         # return resp.json()["detail"]
         return resp.json()["detail"]
     else:
-        return resp.json()["detail"]["error"]
+        return resp.json()["detail"]
 
 
 @app.route('/receiveSupport')
@@ -403,7 +403,6 @@ def receiveCustomerSupport_page():
         },
         'timestamp': date_time
     }
-    
     
     json_params = json.dumps(params)
     # CHECK THIS POST REQUEST ONCE
