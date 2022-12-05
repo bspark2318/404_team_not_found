@@ -132,11 +132,12 @@ def create_app(test_config=None):
 
     @app.route('/update_listing', methods=["POST"])
     def update_listing():
-        print(request.json, flush=True)
+        print(request.json,type(request.json), flush=True)
         payload = request.json
+        print(type(payload), flush=True)
         details = {}
-        user = int(payload['user_id'])
-        listing_id = int(payload['listing_id'])
+        user = payload['user_id']
+        listing_id = payload['listing_id']
 
         for field in payload:
             if field != 'user_id' and field != 'listing_id':
@@ -367,20 +368,37 @@ class AuctionService:
         elif listing['seller'] != user:
             return 'unauthorized'
 
+        if not details['listing_name']:
+            del details['listing_name']
+        if not details['description']:
+            del details['description']
+        if not details['status']:
+            del details['status']
+
         if details['starting_price']:
             details["starting_price"] = float(details['starting_price'])
+        else:
+            del details['starting_price']
 
         if details['increment']:
             details['increment'] = int(details['increment'])
+        else:
+            del details['increment']
 
         if details['start_time']:
             details['start_time'] = datetime.strptime(details['start_time'], '%Y-%m-%dT%H:%M')
+        else:
+            del details['start_time']
 
         if details['end_time']:
             details['end_time'] = datetime.strptime(details['end_time'], '%Y-%m-%dT%H:%M')
-            
-        if details['endgame']
+        else:
+            del details['end_time']
+
+        if details['endgame']:
             details['endgame'] = datetime.strptime(details['endgame'], '%Y-%m-%dT%H:%M')
+        else:
+            del details['endgame']
 
 
         time_mods = []

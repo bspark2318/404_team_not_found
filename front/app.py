@@ -608,20 +608,21 @@ def update_listing():
 
 @app.route('/modify_listing', methods=['GET', 'POST'])
 def modify_listing():
-    form = request.form
+    form = request.form.to_dict()
     print(form, flush=True)
-    inputs = ['listing_name', 'description', 'starting_price', 'increment', 'start_time', 'end_time', 'endgame']
+    inputs = ['listing_name', 'description', 'starting_price', 'increment', 'start_time', 'end_time', 'endgame', 'status']
     params = {
         'listing_id': int(form['listing_id']),
         'user_id': int(session['user'])
     }
-    for input in inputs:
-        params[input][0] = form[input][1]
-    json_params = json.dumps(params)
 
-    print(json_params, flush=True)
+    for key, value in form.items():
+        if key in inputs:
+            params[key] = value
 
-    resp = requests.post("http://service.auction:5000/update_listing",json=json_params)
+    print(params, flush=True)
+
+    resp = requests.post("http://service.auction:5000/update_listing",json=params)
     if resp.status_code == 201 or resp.status_code == 200:
         return resp.json()
     elif resp.status_code == 404:
