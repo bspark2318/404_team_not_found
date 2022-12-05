@@ -63,7 +63,7 @@ def create_app(test_config=None):
         return 'Auction Microservice'
     
 
-    @app.route('/create_listing', methods=["POST"])
+    @app.route('/create_listing', methods=["post"])
     def create_listing():
 
         payload = request.json
@@ -75,7 +75,10 @@ def create_app(test_config=None):
                 item_details[field] = payload[field]
 
         resp = requests.get(
-            "http://service.item:5000/Search_ItemID", listing_id)
+            "http://service.item:5000/searchItemId", {'item_id':listing_id})
+        
+        if not resp:
+            return create_response(404)
 
         for field in resp:
             item_details[field] = resp[field]

@@ -101,6 +101,10 @@ def logoutUser():
     return redirect(url_for('login'))
 
 
+@app.route('/auction')
+def auction_home():
+    return render_template('auction.html')
+
 @app.route('/create_listing')
 def create_listing():
     return render_template('create_listing.html')
@@ -218,11 +222,11 @@ def halt_auction():
     else:
         return resp.json()["detail"]
 
-@app.route('/bid', methods=['POST'])
+@app.route('/bid')
 def bid():
     return render_template('bid.html')
 
-@app.route('/take_bid', methods=['POST'])
+@app.route('/take_bid')
 def take_bid():
     form = request.form
     params = {
@@ -236,11 +240,11 @@ def take_bid():
     else:
         return resp.json()["detail"]
 
-@app.route('/view_metrics', methods=['POST'])
+@app.route('/view_metrics')
 def view_metrics():
     return render_template('view_metrics.html')
 
-@app.route('/see_metrics', methods=['POST'])
+@app.route('/see_metrics')
 def see_metrics():
     form = request.form
     params = {
@@ -253,11 +257,11 @@ def see_metrics():
     else:
         return resp.json()["detail"]
 
-@app.route('/view_bids', methods=['GET'])
+@app.route('/view_bids')
 def view_bids():
     return render_template('view_bids.html')
 
-@app.route('/see_bids', methods=['GET'])
+@app.route('/see_bids')
 def see_bids():
     params = {
         'user_id' : session['user']
