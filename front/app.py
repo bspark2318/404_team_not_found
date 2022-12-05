@@ -266,7 +266,7 @@ def categorize():
 
 
 @app.route('/pushAuction', methods=['POST','GET'])
-def categorize():
+def pushAuction():
     form = request.form
     params = {
         'session_owner': session['user'],
