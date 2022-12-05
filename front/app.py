@@ -59,6 +59,21 @@ def search_item_id():
         return resp.json()["detail"]
 
 
+@app.route('/searchCatById', methods=['POST'])
+def search_cat_by_cat_id():
+    form = request.form
+    params = {
+        'category_id': form['category_id']
+    }
+    resp = requests.get("http://service.item:5000/searchCategory", params=params)
+
+    if resp.json()['status_code'] == "200":
+        return resp.json()["detail"]
+        # return redirect(url_for('home'))
+    else:
+        return resp.json()["detail"]
+
+
 @app.route('/search_itemName', methods=['POST'])
 def search_item_name():
     form = request.form
@@ -304,6 +319,36 @@ def viewFlag():
     }
 
     resp = requests.get("http://service.item:5000/viewflag", params=params)
+
+    if resp.json()['status_code'] == "200":
+        return resp.json()["detail"]
+        # return redirect(url_for('home'))
+    else:
+        return resp.json()["detail"]
+
+
+@app.route('/viewAllCategories', methods=['POST','GET'])
+def viewAllCategories():
+    params = {
+        'session_owner': session['user']
+    }
+
+    resp = requests.get("http://service.item:5000/allCategories", params=params)
+
+    if resp.json()['status_code'] == "200":
+        return resp.json()["detail"]
+        # return redirect(url_for('home'))
+    else:
+        return resp.json()["detail"]
+
+
+@app.route('/viewAllItems', methods=['POST','GET'])
+def viewAllItems():
+    params = {
+        'session_owner': session['user']
+    }
+
+    resp = requests.get("http://service.item:5000/allItems", params=params)
 
     if resp.json()['status_code'] == "200":
         return resp.json()["detail"]

@@ -99,9 +99,9 @@
             
             <hr>
 
-            <form action="/signUp_page.php" method="get">   <!-- post api--> 
+            <form action="/searchCatById" method="post">   <!-- post api--> 
                 <label for="category_id">Search Category by Category ID:
-                    <input type="number" id = "category_id" placeholder="Enter Category ID" name="category_id" required>
+                    <input type="number" id = "category_id" formaction="/searchCatById" placeholder="Enter Category ID" name="category_id" required>
                 </label>
                 <input type="submit" value="Search">
             </form>
@@ -119,10 +119,10 @@
 
             <hr>
             <label>Click to view all Categories:</label>  
-            <button name="item">View All Categories</button>
+            <a href="{{ url_for('viewAllCategories') }}"><button name="item">View All Categories</button></a>
             <hr>
             <label>Click to view all Items:</label>
-            <button name="item">View All Items</button>
+            <a href="{{ url_for('viewAllItems') }}"><button name="item">View All Items</button></a>
         </div>
     </div>
 
