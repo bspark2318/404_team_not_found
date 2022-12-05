@@ -90,9 +90,9 @@
 <div class="row">
     <div class="column left">
         <div class="container">
-            <form action="/signUp_page.php" method="get">   <!-- post api-->
+            <form action="/search_itemID" method="post">   <!-- post api-->
                 <label for="item_id">Search Item by Item ID:
-                    <input type="number" id = "item_id" placeholder="Enter Item ID" name="item_id" required>
+                    <input type="number" id = "item_id" formaction="/search_itemID" placeholder="Enter Item ID" name="item_id" required>
                 </label>
                 <input type="submit" value="Search">
             </form>
@@ -110,9 +110,9 @@
 
     <div class="column middle">
         <div class="container">
-            <form action="/signUp_page.php" method="get">   <!-- post api-->
+            <form action="/search_itemName" method="post">   <!-- post api-->
                 <label for="item_name">Search Item(s) by Item Name:
-                    <input type="text" id = "item_name" placeholder="Enter Item Name" name="item_name" required>
+                    <input type="text" id = "item_name" formaction="/search_itemName" placeholder="Enter Item Name" name="item_name" required>
                 </label>
                 <input type="submit" value="Search">
             </form>
@@ -125,23 +125,19 @@
 
     <div class="column right">
         <div class="container">
-            <form action="/signUp_page.php" method="get">   <!-- post api-->
+            <form action="/search_categoryId" method="post">   <!-- post api-->
                 <label for="category_id">Search Item(s) by Category ID:
-                    <input type="number" id = "category_id" placeholder="Enter Category ID" name="category_id" required>
+                    <input type="number" id = "category_id" formaction="/search_categoryId" placeholder="Enter Category ID" name="category_id" required>
                 </label>
                 <input type="submit" value="Search">
             </form>
 
             <hr>
 
-            <!-- form for see all items -->
-            <!-- <label>Click to view all Items:</label>
-            <button name="item">View All Items</button> -->
+            <label>Click to view all Items:</label>
+            <button name="item">View All Items</button>
         </div>
     </div>
-
-
-            
 
         </div>
     </div>
