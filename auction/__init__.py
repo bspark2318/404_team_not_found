@@ -63,25 +63,27 @@ def create_app(test_config=None):
         return 'Auction Microservice'
     
 
-    @app.route('/create_listing', methods=["post"])
+    @app.route('/create_listing', methods=["POST"])
     def create_listing():
 
         payload = request.json
+        payload = json.loads(payload)
         item_details ={}
-        listing_id = payload['listing_id']
+        listing_id = int(payload['item_id'])
 
         for field in payload:
             if field !='listing_id:':
                 item_details[field] = payload[field]
 
         resp = requests.get(
-            "http://service.item:5000/searchItemId", {'item_id':listing_id})
-        
+            "http://service.item:5000/searchItemId", params={'item_id':listing_id})
+        resp = resp.json()
+
         if not resp:
             return create_response(404)
 
-        for field in resp:
-            item_details[field] = resp[field]
+        for field in resp['detail']['item_data']:
+            item_details[field] = resp['detail']['item_data'][field]
         
         listing = service.handle_create_listing(item_details)
 
@@ -97,8 +99,9 @@ def create_app(test_config=None):
     @app.route('/get_listing', methods=["GET"])
     def get_listing():
 
-        payload = request.json
-        listing_id = payload['listing_id']
+        listing_id = int(request.args.get('listing_id'))
+        # payload = json.loads(payload)
+        # listing_id = int(payload['item_id'])
         listing = service.handle_get_listing(listing_id)
 
         if listing and type(listing) != list:
@@ -112,13 +115,13 @@ def create_app(test_config=None):
     @app.route('/delete_listing', methods=["DELETE"])
     def delete_listing():
         payload = request.json
-        listing_id = payload['listing_id']
-        user = payload['user_id']
+        listing_id = int(payload['listing_id'])
+        user = int(payload['user_id'])
 
         deletion = service.handle_delete_listing(listing_id, user)
 
         if deletion == 'success':
-            response = create_response(200)
+            response = create_response(200, "Listing Deleted")
         elif not deletion:
             response = create_response(404)
         elif deletion == 'unauthorized':
@@ -129,15 +132,15 @@ def create_app(test_config=None):
 
     @app.route('/update_listing', methods=["POST"])
     def update_listing():
-
+        print(request.json, flush=True)
         payload = request.json
         details = {}
-        user = payload['user_id']
-        listing_id = payload['listing_id']
+        user = int(payload['user_id'])
+        listing_id = int(payload['listing_id'])
 
         for field in payload:
             if field != 'user_id' and field != 'listing_id':
-                details[field] = payload[field]
+                details[field] = payload[field]        
 
         if len(details) == 0:
             return create_response(400)
@@ -149,7 +152,7 @@ def create_app(test_config=None):
         if update == 'success':
             response = create_response(200, 'details', details)
         elif not update:
-            response = create_response(404)
+            response = create_response(404, "Listing not found")
         elif update == 'unauthorized':
             response = create_response(400)
 
@@ -158,7 +161,7 @@ def create_app(test_config=None):
 
     @app.route('/view_live', methods=["GET"])
     def view_live():
-        sort = request
+        sort = request.args.get('sort')
         live_auctions = service.handle_view_live(sort)
 
         if live_auctions:
@@ -173,7 +176,7 @@ def create_app(test_config=None):
 
     @app.route('/view_bids', methods=['GET'])
     def view_bids():
-        user_id = request
+        user_id = int(request.args.get('user_id'))
         listings = service.view_user_bids(user_id)
 
         response = create_response(200 if listings else 404, 
@@ -201,8 +204,8 @@ def create_app(test_config=None):
     @app.route('/stop_auction', methods=["POST]"])
     def stop_auction():
         payload = request.json
-        admin = payload['admin_id']
-        listing_id = payload['listing_id']
+        admin = int(payload['admin_id'])
+        listing_id = int(payload['listing_id'])
         listing = service.handle_get_listing(listing_id)
 
         details = {
@@ -222,14 +225,14 @@ def create_app(test_config=None):
     def take_bid():
 
         payload = request.json
-        bidder = payload['user_id']
-        highest_bid = payload['bid']
-        listing_id = payload['listing_id']
+        bidder = int(payload['user_id'])
+        highest_bid = float(payload['bid'])
+        listing_id = int(payload['listing_id'])
 
         listing = service.handle_get_listing(listing_id)
 
         if not listing:
-            return create_response(404)
+            return create_response(404, "Listing not found")
         elif highest_bid < listing['current_price'] + listing['increment']:
             return create_response(400, f'bid too low, minimum bid is {listing["increment"]+listing["current_price"]}')
         elif listing['status'] != 'live':
@@ -252,8 +255,8 @@ def create_app(test_config=None):
     def view_metrics():
 
         payload = request.json
-        window_start = payload['window_start']
-        window_end = payload['window_end']
+        window_start = datetime.strptime(payload['window_start'], "%Y-%m-%d %H:%M:%S")
+        window_end = datetime.strptime(payload['window_end'], "%Y-%m-%d %H:%M:%S")
 
         req_auctions = service.handle_view_metrics(window_start, window_end)
 
@@ -285,16 +288,19 @@ class AuctionService:
                 return None
                         
             listing_obj = {} 
-            dest_source = [("listing_id", 'item_id'), ("listing_name", 'item_name'),
-                          ("start_time", 'start_time'), ("starting_price", 'price'),
-                          ("current_price", 'price'), ("increment", 'increment'),
-                          ("description", 'description'), ("seller", 'user_id'),
-                          ("seller_email", 'owner_email'), ("watchers", 'watchers'), 
-                          ("end_time", 'end_time'), ("endgame", 'endgame')]
-            
-            for dest, source in dest_source:
-                listing_obj[dest] = item_details[source]
-            
+
+            listing_obj['listing_id'] = int(item_details['item_id'])
+            listing_obj['listing_name'] = item_details['item_name']
+            listing_obj['start_time'] = datetime.strptime(item_details['start_time'], '%Y-%m-%dT%H:%M')
+            listing_obj['starting_price'] = float(item_details['item_price'])
+            listing_obj['current_price'] = float(item_details['item_price'])
+            listing_obj['increment'] = float(item_details['increment'])
+            listing_obj['description'] = item_details['item_description']
+            listing_obj['seller'] = int(item_details['item_owner'])
+            listing_obj['item_categories'] = item_details['item_categories']
+
+            listing_obj['end_time'] = datetime.strptime((item_details['end_time']), '%Y-%m-%dT%H:%M')
+            listing_obj['endgame'] = datetime.strptime((item_details['endgame']), '%Y-%m-%dT%H:%M')
             listing_obj['bid_list'] = []
             listing_obj['start_id'] = str(listing_obj['listing_id']) + 'start'
             listing_obj['stop_id'] = str(listing_obj['listing_id']) + 'stop'
@@ -304,10 +310,10 @@ class AuctionService:
             self.db.insert_one(listing_obj)     
             listing = self.handle_get_listing(listing_obj['listing_id'])
 
-            starter = datetime.strptime(listing_obj['start_time'], '%Y-%m-%d %H:%M:%S')
+            starter = listing_obj['start_time']
             if not starter:
                 starter = datetime.today() + relativedelta(days=7)
-                print(f'No start time provided. Default start time is {starter.strftime("%Y-%m-%d %H:%M:%S")}', flush=True)
+                # print(f'No start time provided. Default start time is {starter.strftime("%Y-%m-%d %H:%M:%S")}', flush=True)
 
             job_id = listing_obj['start_id']
             self.scheduler.add_job(self.handle_start_auction, 'date', run_date=starter, args=[listing_obj['seller'], listing], id=job_id)
@@ -361,22 +367,37 @@ class AuctionService:
         elif listing['seller'] != user:
             return 'unauthorized'
 
-        else:
-            time_mods = []
-            keys = ['start_time','end_time','endgame']
-            for k in keys:
-                if k in details.keys():
-                    time_mods.append(details[k])        
+        if details['starting_price']:
+            details["starting_price"] = float(details['starting_price'])
 
-            if not stop_auction:
-                jobs = [listing['start_id'], listing['stop_id'], listing['alert_id']]
-                for i, mod in enumerate(time_mods):
-                    job_id = jobs[i]
-                    self.scheduler.reschedule_job(job_id, 'date', run_date=mod)
+        if details['increment']:
+            details['increment'] = int(details['increment'])
+
+        if details['start_time']:
+            details['start_time'] = datetime.strptime(details['start_time'], '%Y-%m-%dT%H:%M')
+
+        if details['end_time']:
+            details['end_time'] = datetime.strptime(details['end_time'], '%Y-%m-%dT%H:%M')
             
-            self.db.update_one({'listing_id': listing['listing_id']}, {'$set' : details})
+        if details['endgame']
+            details['endgame'] = datetime.strptime(details['endgame'], '%Y-%m-%dT%H:%M')
 
-            return 'success'
+
+        time_mods = []
+        keys = ['start_time','end_time','endgame']
+        for k in keys:
+            if k in details.keys():
+                time_mods.append(details[k])        
+
+        if not stop_auction:
+            jobs = [listing['start_id'], listing['stop_id'], listing['alert_id']]
+            for i, mod in enumerate(time_mods):
+                job_id = jobs[i]
+                self.scheduler.reschedule_job(job_id, 'date', run_date=mod)
+        
+        self.db.update_one({'listing_id': listing['listing_id']}, {'$set' : details})
+
+        return 'success'
 
 
     def handle_view_live(self, sort):
@@ -477,20 +498,17 @@ class AuctionService:
                     'user_id': winner,
                     'total': amount,
                     "cart_id": listing_id,
-                    # 'seller': listing['seller'],
-                    # 'seller_email': listing['seller_email'],
-                    # 'item': listing['listing_id'],
                     'payment_method': {
                         "shipping_address": "Approved address",
                         "billing_address": "Approved address",
                         "method_info": method_info,
                         "method": "card"
                     }
-                    
                 }
 
             resp = requests.post(
                 "http://service.payment:5000/pay_for_cart", payout_details)
+        return resp
 
 
     def view_user_bids(self, user_id):
