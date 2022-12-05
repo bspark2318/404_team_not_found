@@ -46,11 +46,19 @@
         .container {
           padding: 16px;
         }
+
+        .alert-error {
+            padding: 8px;
+            background-color: red;
+            color: white;
       
         </style>
         </head>
         <body>
-        
+        {% for message in get_flashed_messages() %}
+        <div class="alert-error">{{ message }}</div>
+        {% endfor %}
+
         <h3>Login</h3>
         
         <form name="login-form" action="/loginUser" method="post">   <!-- post api-->

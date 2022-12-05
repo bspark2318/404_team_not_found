@@ -171,14 +171,14 @@ def suspendUser():  # check if the user has to be suspended only for a time peri
         return jsonify({
             "status_code": "404",
             "detail": {
-                "error" : "User ID " + user_id_input + " does not exist to suspend the user!"
+                "error" : "User ID " + str(user_id_input) + " does not exist to suspend the user!"
             }
         })
     if not User_class.objects(user_id=user_id_admin):
         return jsonify({
             "status_code": "404",
             "detail": {
-                "error" : "User ID " + user_id_admin + " does not exist!"
+                "error" : "User ID " + str(user_id_admin) + " does not exist!"
             }
         })
     user_admin = User_class.objects(user_id=user_id_admin)[0]
@@ -186,7 +186,7 @@ def suspendUser():  # check if the user has to be suspended only for a time peri
         return jsonify({
             "status_code": "404",
             "detail": {
-                "error" : "User ID " + user_id_admin + " does not exist!"
+                "error" : "User ID " + str(user_id_admin) + " does not exist!"
             }
         })
     else:
@@ -196,18 +196,18 @@ def suspendUser():  # check if the user has to be suspended only for a time peri
                 print("User suspended!")
                 return jsonify({
                     "status_code": "201",
-                    "detail": "User ID " + user_id_input + " suspended!"
+                    "detail": "User ID " + str(user_id_input) + " suspended!"
                 })
             else:
                 print("User has been suspended already!")
                 return jsonify({
                     "status_code": "404",
-                    "detail": "User ID " + user_id_input + " has been suspended already!"
+                    "detail": "User ID " + str(user_id_input) + " has been suspended already!"
                 })
         else:
             return jsonify({
                 "status_code": "403",
-                "detail": "User ID " + user_id_admin + " is not authorized to suspend another user!"
+                "detail": "User ID " + str(user_id_admin) + " is not authorized to suspend another user!"
             })
 
 
@@ -219,14 +219,14 @@ def unsuspendUser():  # check if the user has to be suspended only for a time pe
         return jsonify({
             "status_code": "404",
             "detail": {
-                "error" : "User ID " + user_id_input + " does not exist to unsuspend the user!"
+                "error" : "User ID " + str(user_id_input) + " does not exist to unsuspend the user!"
             }
         })
     if not User_class.objects(user_id=user_id_admin):
         return jsonify({
             "status_code": "404",
             "detail": {
-                "error" : "User ID " + user_id_admin + " does not exist!"
+                "error" : "User ID " + str(user_id_admin) + " does not exist!"
             }
         })
     user_admin = User_class.objects(user_id=user_id_admin)[0]
@@ -234,7 +234,7 @@ def unsuspendUser():  # check if the user has to be suspended only for a time pe
         return jsonify({
             "status_code": "404",
             "detail": {
-                "error" : "User ID " + user_id_admin + " does not exist!"
+                "error" : "User ID " + str(user_id_admin) + " does not exist!"
             }
         })
     else:
@@ -244,18 +244,18 @@ def unsuspendUser():  # check if the user has to be suspended only for a time pe
                 print("User unsuspended!")
                 return jsonify({
                     "status_code": "201",
-                    "detail": "User ID " + user_id_input + " unsuspended!"
+                    "detail": "User ID " + str(user_id_input) + " unsuspended!"
                 })
             else:
                 print("User has been unsuspended already!")
                 return jsonify({
                     "status_code": "404",
-                    "detail": "User ID " + user_id_input + " has been unsuspended already!"
+                    "detail": "User ID " + str(user_id_input) + " has been unsuspended already!"
                 })
         else:
             return jsonify({
                 "status_code": "403",
-                "detail": "User ID " + user_id_admin + " is not authorized to unsuspend another user!"
+                "detail": "User ID " + str(user_id_admin) + " is not authorized to unsuspend another user!"
             })
 
 @app.route('/changeAdminStatus', methods = ['POST'])
@@ -266,14 +266,14 @@ def changeAdminStatus():
         return jsonify({
             "status_code": "404",
             "detail": {
-                "error" : "User ID " + user_id_input + " does not exist to change his status to an Admin!"
+                "error" : "User ID " + str(user_id_input) + " does not exist to change his status to an Admin!"
             }
         })
     if not User_class.objects(user_id=user_id_admin):
         return jsonify({
             "status_code": "404",
             "detail": {
-                "error" : "User ID " + user_id_admin + " does not exist!"
+                "error" : "User ID " + str(user_id_admin) + " does not exist!"
             }
         })
     user_admin = User_class.objects(user_id=user_id_admin)[0]
@@ -281,7 +281,7 @@ def changeAdminStatus():
         return jsonify({
             "status_code": "404",
             "detail": {
-                "error" : "User ID " + user_id_admin + " does not exist!"
+                "error" : "User ID " + str(user_id_admin) + " does not exist!"
             }
         })
     else:
@@ -291,18 +291,18 @@ def changeAdminStatus():
                 print("Changed user status to Admin!")
                 return jsonify({
                     "status_code": "201",
-                    "detail": "Status of User ID " + user_id_input + " is changed to Admin!"
+                    "detail": "Status of User ID " + str(user_id_input) + " is changed to Admin!"
                 })
             else:
                 print("User is already an admin!")
                 return jsonify({
                     "status_code": "404",
-                    "detail": "User ID " + user_id_input + " is already an admin!"
+                    "detail": "User ID " + str(user_id_input) + " is already an admin!"
                 })
         else:
             return jsonify({
                 "status_code": "403",
-                "detail": "User ID " + user_id_admin + " is not authorized to make another user an admin!"
+                "detail": "User ID " + str(user_id_admin) + " is not authorized to make another user an admin!"
             })
 
 
@@ -627,14 +627,14 @@ def addItemToWatchList():
             return jsonify({
                 "status_code": "404",
                 "detail": {
-                    "error" : "Item "+ item_id_input +" does not exist!"
+                    "error" : "Item "+ str(item_id_input) +" does not exist!"
                 }
             })
     except KeyError:
         return jsonify({
             "status_code": "404",
             "detail": {
-                "error" : "Item "+ item_id_input +" does not exist!"
+                "error" : "Item "+ str(item_id_input) +" does not exist!"
             }
         })
 
@@ -644,13 +644,13 @@ def addItemToWatchList():
         u.save()
         return jsonify({
             "status_code": "201",
-            "detail": "Item "+ item_id_input +" added to the user's watchlist!"
+            "detail": "Item "+ str(item_id_input) +" added to the user's watchlist!"
         })
     else:
         return jsonify({
             "status_code": "404",
             "detail": {
-                "error": "Item "+ item_id_input +" already in user's watchlist!"
+                "error": "Item "+ str(item_id_input) +" already in user's watchlist!"
             }
         })
 
@@ -683,14 +683,14 @@ def addItemToCart():
             return jsonify({
                 "status_code": "404",
                 "detail": {
-                    "error" : "Item "+ item_id_input +" does not exist!"
+                    "error" : "Item "+ str(item_id_input) +" does not exist!"
                 }
             })
     except KeyError:
         return jsonify({
             "status_code": "404",
             "detail": {
-                "error" : "Item "+ item_id_input +" does not exist!"
+                "error" : "Item "+ str(item_id_input) +" does not exist!"
             }
         })
 
@@ -700,13 +700,13 @@ def addItemToCart():
         u.save()
         return jsonify({
             "status_code": "201",
-            "detail": "Item "+ item_id_input +" added to the user's cart!"
+            "detail": "Item "+ str(item_id_input) +" added to the user's cart!"
         })
     else:
         return jsonify({
             "status_code": "404",
             "detail": {
-                "error": "Item "+ item_id_input +" already in user's cart!"
+                "error": "Item "+ str(item_id_input) +" already in user's cart!"
             }
         })
 
@@ -739,13 +739,13 @@ def deleteItemFromCart():
         u.save()
         return jsonify({
             "status_code": "204",
-            "detail": "Item "+ item_id_input +" deleted from the user's cart!"
+            "detail": "Item "+ str(item_id_input) +" deleted from the user's cart!"
         })
     else:
         return jsonify({
             "status_code": "404",
             "detail": {
-                "error": "Item "+ item_id_input +" does not exist in the user's cart!"
+                "error": "Item "+ str(item_id_input) +" does not exist in the user's cart!"
             }
         })
 
@@ -779,13 +779,13 @@ def deleteItemFromWatchList():
         u.save()
         return jsonify({
             "status_code": "204",
-            "detail": "Item "+ item_id_input +" deleted from the user's watchlist!"
+            "detail": "Item "+ str(item_id_input) +" deleted from the user's watchlist!"
         })
     else:
         return jsonify({
             "status_code": "404",
             "detail": {
-                "error": "Item "+ item_id_input +" does not exist in the user's watchlist!"
+                "error": "Item "+ str(item_id_input) +" does not exist in the user's watchlist!"
             }
         })
 
@@ -871,8 +871,8 @@ def checkout():
             response = requests.get("http://service.item:5000/searchItemId",params={'item_id': i})
             # CHECK FOR ITEM STATUS CODES
             try:
-                if response.json()["item_price"]: # This line should check for status_code == 200, then add price to total
-                    price = response.json()["item_price"]
+                if response.json()["detail"]["item_data"]["item_price"]: # This line should check for status_code == 200, then add price to total
+                    price = response.json()["detail"]["item_data"]["item_price"]
                     total += price
             except KeyError:
                 items_not_in_cart.append(i)

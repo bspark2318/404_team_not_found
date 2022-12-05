@@ -112,9 +112,10 @@ def signUp_User():
     resp = requests.post("http://service.user:5000/signUp",params=params)
     if resp.json()['status_code'] == "201":
         # return resp.json()["detail"]
+        flash("Info: Your user_id is "+str(resp.json()["detail"]["user_id"]))
         return redirect(url_for('login'))
     else:
-        return resp.json()["detail"]
+        return resp.json()["detail"]["error"]
 
 @app.route('/createitem')
 def createitem():
@@ -269,11 +270,6 @@ def updateUser():
     return render_template('updateUser.html')
 
 
-@app.route('/receiveSupport')
-def receiveSupport():
-    return render_template('receiveSupport.html')
-
-
 @app.route('/update_User', methods=['POST'])
 def update_User():
     form = request.form
@@ -293,7 +289,7 @@ def update_User():
         # return resp.json()["detail"]
         return resp.json()["detail"]
     else:
-        return resp.json()["detail"]
+        return resp.json()["detail"]["error"]
 
 @app.route('/delete_User', methods=['POST','GET'])
 def delete_User():
@@ -301,12 +297,11 @@ def delete_User():
         'user_id': session['user'],
     }
     resp = requests.delete("http://service.user:5000/deleteUser",params=params)
-    return resp.json()
     if resp.json()['status_code'] == "204":
         # return resp.json()["detail"]
         return resp.json()["detail"]
     else:
-        return resp.json()["detail"]
+        return resp.json()["detail"]["error"]
 
 @app.route('/lookup_User', methods=['GET'])
 def lookup_User():
@@ -315,10 +310,9 @@ def lookup_User():
     }
     resp = requests.get("http://service.user:5000/lookupUser",params=params)
     if resp.json()['status_code'] == "200":
-        # return resp.json()["detail"]
         return resp.json()["detail"]
     else:
-        return resp.json()["detail"]
+        return resp.json()["detail"]["error"]
 
 
 @app.route('/suspend_user', methods=['POST'])
@@ -333,7 +327,7 @@ def suspend_user():
         # return resp.json()["detail"]
         return resp.json()["detail"]
     else:
-        return resp.json()["detail"]
+        return resp.json()["detail"]["error"]
 
 
 @app.route('/unsuspend_user', methods=['POST'])
@@ -348,7 +342,7 @@ def unsuspend_user():
         # return resp.json()["detail"]
         return resp.json()["detail"]
     else:
-        return resp.json()["detail"]
+        return resp.json()["detail"]["error"]
 
 
 @app.route('/change_status_admin', methods=['POST'])
@@ -363,7 +357,7 @@ def change_status_admin():
         # return resp.json()["detail"]
         return resp.json()["detail"]
     else:
-        return resp.json()["detail"]
+        return resp.json()["detail"]["error"]
 
 
 @app.route('/receiveSupport')
@@ -418,10 +412,9 @@ def viewCart():
     }
     resp = requests.get("http://service.user:5000/viewCart",params=params)
     if resp.json()['status_code'] == "200":
-        # return resp.json()["detail"]
         return resp.json()["detail"]
     else:
-        return resp.json()["detail"]
+        return resp.json()["detail"]["error"]
 
 
 @app.route('/viewWatchlist', methods=['GET'])
@@ -431,10 +424,9 @@ def viewWatchlist():
     }
     resp = requests.get("http://service.user:5000/viewWatchList",params=params)
     if resp.json()['status_code'] == "200":
-        # return resp.json()["detail"]
         return resp.json()["detail"]
     else:
-        return resp.json()["detail"]
+        return resp.json()["detail"]["error"]
 
 
 @app.route('/add_to_Cart', methods=['POST'])
@@ -449,7 +441,7 @@ def add_to_Cart():
         # return resp.json()["detail"]
         return resp.json()["detail"]
     else:
-        return resp.json()["detail"]
+        return resp.json()["detail"]["error"]
 
 
 @app.route('/add_to_Watchlist', methods=['POST'])
@@ -464,7 +456,7 @@ def add_to_Watchlist():
         # return resp.json()["detail"]
         return resp.json()["detail"]
     else:
-        return resp.json()["detail"]
+        return resp.json()["detail"]["error"]
 
 
 
@@ -476,12 +468,11 @@ def delete_from_Cart():
         'item_id': form['itemId']
     }
     resp = requests.delete("http://service.user:5000/deleteItemFromCart",params=params)
-    return resp.json()
-    # if resp.json()['status_code'] == "200":
-    #     # return resp.json()["detail"]
-    #     return resp.json()["detail"]
-    # else:
-    #     return resp.json()["detail"]
+    # return resp.json()
+    if resp.json()['status_code'] == "204":
+        return resp.json()["detail"]
+    else:
+        return resp.json()["detail"]["error"]
 
 
 @app.route('/delete_from_Watchlist', methods=['POST','GET'])
@@ -492,12 +483,11 @@ def delete_from_Watchlist():
         'item_id': form['itemId']
     }
     resp = requests.delete("http://service.user:5000/deleteItemFromWatchList",params=params)
-    return resp.json()
-    # if resp.json()['status_code'] == "200":
-    #     # return resp.json()["detail"]
-    #     return resp.json()["detail"]
-    # else:
-    #     return resp.json()["detail"]
+    # return resp.json()
+    if resp.json()['status_code'] == "204":
+        return resp.json()["detail"]
+    else:
+        return resp.json()["detail"]["error"]
 
 
 @app.route('/loginUser', methods=['POST'])
@@ -512,7 +502,7 @@ def loginUser():
         session['user'] = resp.json()["detail"]["user_id"]
         return redirect(url_for('home'))
     else:
-        # flash('Incorrect credentials')
+        flash('Error: Incorrect credentials')
         return redirect(url_for('login'))
 
 @app.route('/logoutUser', methods=['POST','GET'])
