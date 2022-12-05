@@ -898,6 +898,7 @@ def checkout():
             }
             u.cart = []
             u.save()
+            return params
             resp = requests.post("http://service.payment:5000/pay_for_cart", data=params)
             if resp.json()["status_code"] == "200":
                 if len(items_not_in_cart) > 0:

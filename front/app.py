@@ -401,6 +401,7 @@ def receiveCustomerSupport_page():
     }
     # CHECK THIS POST REQUEST ONCE
     resp = requests.post("http://service.notification:5000/customer_support_response", data=params)
+    return resp.text
     if resp.json()['status_code'] == "201":
         # return resp.json()["detail"]
         return resp.json()
