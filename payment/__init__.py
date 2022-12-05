@@ -51,8 +51,6 @@ def create_app(test_config=None):
         response_json = {}
         response_json["message"] = message
         response_json["payload"] = response_payload
-        print("response_json", file=sys.stderr)
-        print(response_json, file=sys.stderr)
         response = make_response(jsonify(response_json))
         response.status_code = 201 if status else 400   
         return response
@@ -64,7 +62,6 @@ def create_app(test_config=None):
     
     @app.route('/pay_for_cart', methods=["POST"])
     def pay_for_cart():
-        print("Hitting pay for cart", file=sys.stderr)
         payload = request.json
         payload = json.loads(payload)
         

@@ -564,9 +564,9 @@ class AuctionService:
                         "method": "card"
                     }
                 }
-
+            payout_details = json.dumps(payout_details)
             requests.post(
-                "http://service.payment:5000/pay_for_cart", payout_details)
+                "http://service.payment:5000/pay_for_cart", json=payout_details)
 
 
     def view_user_bids(self, user_id):
