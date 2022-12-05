@@ -523,8 +523,12 @@ def loginUser():
     }
     resp = requests.post("http://service.user:5000/login",params=params)
     if resp.json()['status_code'] == "201":
-        session['user'] = resp.json()["detail"]["user_id"]
-        return redirect(url_for('home'))
+        if resp.json()["detail"]["suspendStatus"]:
+            flash('Error: User is suspended!')
+            return redirect(url_for('login'))
+        else:
+            session['user'] = resp.json()["detail"]["user_id"]
+            return redirect(url_for('home'))
     else:
         flash('Error: Incorrect credentials')
         return redirect(url_for('login'))

@@ -381,7 +381,8 @@ def login():
         return jsonify({
             "status_code": "201",
             "detail": {
-                "user_id": user[0].user_id
+                "user_id": user[0].user_id,
+                "suspendStatus": user[0].suspendStatus
             }
         })
         # return 'success'
