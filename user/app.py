@@ -1,5 +1,6 @@
 import flask
 from flask_mongoengine import MongoEngine
+import sys
 import requests
 import os
 import json
@@ -380,7 +381,8 @@ def login():
         return jsonify({
             "status_code": "201",
             "detail": {
-                "user_id": user[0].user_id
+                "user_id": user[0].user_id,
+                "suspendStatus": user[0].suspendStatus
             }
         })
         # return 'success'
@@ -896,37 +898,27 @@ def checkout():
                     'shipping_address': shipping_address
                 }
             }
-            u.cart = []
-            u.save()
-            return params
-            resp = requests.post("http://service.payment:5000/pay_for_cart", data=params)
-            if resp.json()["status_code"] == "200":
-                if len(items_not_in_cart) > 0:
-                    return jsonify({
-                        "status_code": "200",
-                        "detail": {
-                            "Items "+items_not_in_cart+" do not exist in the Item database and cannot be processed for checkout. All other items are checked out. Details: "+params
-                        }
-                    })
-                else:
-                    return jsonify({
-                        "status_code": "200",
-                        "detail": {
-                            "Items are checked out. Details: " + params
-                        }
-                    })
+            
+            json_params = json.dumps(params)            
+            
+
+            resp = requests.post("http://service.payment:5000/pay_for_cart", json=json_params)
+            
+            if resp.status_code == 201:
+                for i in u.cart:
+                    response = requests.delete("http://service.item:5000/deleteCartItem",params={'item_id': i})
+                    if response.json()['status_code'] != "204":
+                        print(response.json()['detail'])
+                u.cart = []
+                u.save()
+                return resp.text
             else:
-                return jsonify({
-                    "status_code": "404",
-                    "detail": {
-                        "error": "Error in checkout and payment processing"
-                    }
-                })
+                return resp.text
         else:
             return jsonify({
                 "status_code": "404",
                 "detail": {
-                    "error": "Total is zero! Checkout cannot be processed"
+                    "error": "Total is zero! Checkout cannot be processed!"
                 }
             })
     else:

@@ -45,16 +45,16 @@ services:
           - service.notification
 
   notification_db:
-    image: mongo:latest
-    ports:
-      - "27017:27017"
-    container_name: notification_db 
-    volumes: 
-      - /Users/user/data/mongo/notification
-    networks:
-      default:
-        aliases:
-          - service.notification  
+     image: mongo:latest
+     ports:
+       - "27017:27017"
+     container_name: notification_db
+     volumes:
+       - /Users/user/data/mongo/notification
+     networks:
+       default:
+         aliases:
+           - service.notification
   
   itemservice:
     build: ./item/.

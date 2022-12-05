@@ -2,6 +2,7 @@ import sys
 import os
 from dotenv import load_dotenv
 import time 
+import json
 from flask import Flask, request, make_response, jsonify
 import requests
 from pymongo import MongoClient
@@ -129,8 +130,8 @@ def create_app(test_config=None):
     @app.route('/customer_support_response', methods=["POST"])
     def customer_support_response():
         payload = request.json
-        
-        user_id = payload['user_id']
+        payload = json.loads(payload)
+        user_id = int(payload['user_id'])
         request_body = payload['request']
         response_body = payload['response']
         timestamp = payload['timestamp']
@@ -276,6 +277,7 @@ class NotificationService:
     def handle_customer_support_response(self, user_id, request_body, response_body, recipient):    
         try:
             ## Handle sending the email
+            
             request_title = request_body["title"]
             request_content = request_body["content"]
             response_content = response_body["content"]

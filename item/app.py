@@ -154,12 +154,29 @@ def Search_ItemID():
                 }
             })
     else:
-        return jsonify({
-                "status_code": "200",
-                "detail": {
-                    "item_data" : search_out.to_json()
-                }
-            })
+        item_owner = search_out.item_owner
+        resp = requests.get("http://service.user:5000/getEmailId",params={'user_id': item_owner})
+        if resp.json()["status_code"] == "200":
+            item_owner_email = resp.json()["detail"]["user_data"]
+            return jsonify({
+                    "status_code": "200",
+                    "detail": {
+                        "item_data":
+                            {
+                                "item_id": search_out.item_id,
+                                "item_name": search_out.item_name,
+                                "item_price": search_out.item_price,
+                                "item_description": search_out.item_description,
+                                "item_weight": search_out.item_weight,
+                                "item_categories": search_out.item_categories,
+                                "item_owner": search_out.item_owner,
+                                "item_owner_email": item_owner_email,
+                                "item_status": search_out.item_status
+                            }
+                        }
+                     })
+        else:
+            return resp.json()
 
 
 @app.route('/searchItemName', methods=['GET'])       

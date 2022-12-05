@@ -344,7 +344,7 @@ def suspend_user():
         # return resp.json()["detail"]
         return resp.json()["detail"]
     else:
-        return resp.json()["detail"]["error"]
+        return resp.json()["detail"]
 
 
 @app.route('/unsuspend_user', methods=['POST'])
@@ -359,7 +359,7 @@ def unsuspend_user():
         # return resp.json()["detail"]
         return resp.json()["detail"]
     else:
-        return resp.json()["detail"]["error"]
+        return resp.json()["detail"]
 
 
 @app.route('/change_status_admin', methods=['POST'])
@@ -374,7 +374,7 @@ def change_status_admin():
         # return resp.json()["detail"]
         return resp.json()["detail"]
     else:
-        return resp.json()["detail"]["error"]
+        return resp.json()["detail"]
 
 
 @app.route('/receiveSupport')
@@ -386,6 +386,10 @@ def receiveCustomerSupport_page():
     form = request.form
     resp = requests.get("http://service.user:5000/getEmailId",params={'user_id': session['user']})
     email_id = resp.json()["detail"]["user_data"]
+    
+    now = datetime.datetime.now() # current date and time
+    date_time = now.strftime("%m/%d/%Y, %H:%M:%S")
+    
     params = {
         'user_id': session['user'],
         'recipient': email_id,
@@ -397,10 +401,12 @@ def receiveCustomerSupport_page():
             'title': 're: '+form['title'],
             'content': 'You will receive your response in a couple of days. Thank you for your patience.'
         },
-        'timestamp': datetime.datetime.now()
+        'timestamp': date_time
     }
+    
+    json_params = json.dumps(params)
     # CHECK THIS POST REQUEST ONCE
-    resp = requests.post("http://service.notification:5000/customer_support_response", data=params)
+    resp = requests.post("http://service.notification:5000/customer_support_response", json=json_params)
     return resp.text
     if resp.json()['status_code'] == "201":
         # return resp.json()["detail"]
@@ -517,8 +523,12 @@ def loginUser():
     }
     resp = requests.post("http://service.user:5000/login",params=params)
     if resp.json()['status_code'] == "201":
-        session['user'] = resp.json()["detail"]["user_id"]
-        return redirect(url_for('home'))
+        if resp.json()["detail"]["suspendStatus"]:
+            flash('Error: User is suspended!')
+            return redirect(url_for('login'))
+        else:
+            session['user'] = resp.json()["detail"]["user_id"]
+            return redirect(url_for('home'))
     else:
         flash('Error: Incorrect credentials')
         return redirect(url_for('login'))
