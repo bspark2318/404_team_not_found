@@ -578,24 +578,26 @@ def find_listing():
     else:
         return "Execution Failed"
 
-@app.route('/delete_listing', methods=['GET', 'DELETE'])
+@app.route('/delete_listing', methods=['POST', 'GET'])
 def delete_listing():
     return render_template('delete_listing.html')
 
-@app.route('/destroy_listing', methods=['GET', 'DELETE'])
+@app.route('/destroy_listing', methods=['POST', 'GET'])
 def destroy_listing():
-    form = request.form
+    print(request.form, flush=True)
+    form = request.form.to_dict()
+    print(form, flush=True)
     params = {
         "listing_id": int(form['listing_id']),
         'user_id': int(session['user'])
     }
-    json_params = json.dumps(params) 
 
-    print(json_params, flush = True)
+    print(params, flush = True)
 
-    resp = requests.get("http://service.auction:5000/delete_listing",json=json_params)
+    resp = requests.delete("http://service.auction:5000/delete_listing",json=params)
+    print(resp, flush=True)
     if resp.status_code == 201 or resp.status_code == 200:
-        return resp.json()
+        return "Item Deleted"
     elif resp.status_code == 404:
         return "Listing not found"
     else:
@@ -637,9 +639,6 @@ def view_live():
 @app.route('/see_live', methods=['GET', 'POST'])
 def see_live():
     form = request.form
-
-    print(form, Flush=True)
-
     resp = requests.get("http://service.auction:5000/view_live", form)
     if resp.status_code == 201 or resp.status_code == 200:
         return resp.json()
@@ -655,16 +654,16 @@ def stop_auction():
 @app.route('/halt_auction', methods=['GET', 'POST'])
 def halt_auction():
 
-    form = request.form
+    form = request.form.to_dict()
     params = {
         'listing_id': int(form['listing_id']),
         'admin_id': int(session['user'])
     }
-    json_params = json.dumps(params)
 
-    print(json_params, flush=True)
+    print(params,"662print", flush=True)
 
-    resp = requests.post("http://service.auction:5000/stop_auction",json=json_params)
+    resp = requests.post("http://service.auction:5000/stop_auction",json=params)
+    print(resp, "665print", flush=True)
     if resp.status_code == 201 or resp.status_code == 200:
         return resp.json()
     elif resp.status_code == 404:
@@ -678,15 +677,15 @@ def bid():
 
 @app.route('/take_bid', methods=['GET', 'POST'])
 def take_bid():
-    form = request.form
+    form = request.form.to_dict()
     params = {
         'listing_id': int(form['listing_id']),
         'user_id': int(session['user']),
         'bid': float(form['bid'])
     }
-    json_params = json.dumps(params)
 
-    print(json_params, flush=True)
+    print(params, flush=True)
+    json_params = json.dumps(params)
 
     resp = requests.post("http://service.auction:5000/take_bid",json=json_params)
     if resp.status_code == 201 or resp.status_code == 200:
@@ -702,17 +701,17 @@ def view_metrics():
 
 @app.route('/see_metrics', methods=['GET', 'POST'])
 def see_metrics():
-    form = request.form
+    form = request.form.to_dict()
+    print(form, flush=True)
     params = {
         'window_start': form['window_start'],
         'window_end': form['window_end']
     }
-    json_params = json.dumps(params)
 
-    print(json_params, flush=True)
+    print(params, flush=True)
 
 
-    resp = requests.get("http://service.auction:5000/view_metrics",json=json_params)
+    resp = requests.get("http://service.auction:5000/view_metrics",params=params)
     if resp.status_code == 201 or resp.status_code == 200:
         return resp.json()
     elif resp.status_code == 404:
@@ -726,15 +725,17 @@ def view_bids():
 
 @app.route('/see_bids', methods=['GET', 'POST'])
 def see_bids():
-    form = request.form
+    print('I AM VIEWING', flush=True)
+    print(request, flush=True)
     params = {
         'user_id' : int(session['user'])
     }
-    json_params = json.dumps(params)
 
-    print(json_params, flush=True)
+    print(params, '729', flush=True)
 
-    resp = requests.get("http://service.auction:5000/view_bids",json=json_params)
+    resp = requests.get("http://service.auction:5000/view_bids",params=params)
+    print(resp, '732', flush=True)
+
     if resp.status_code == 201 or resp.status_code == 200:
         return resp.json()
     elif resp.status_code == 404:

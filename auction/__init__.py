@@ -114,9 +114,11 @@ def create_app(test_config=None):
 
     @app.route('/delete_listing', methods=["DELETE"])
     def delete_listing():
+        print(request.json,'117',flush=True)
         payload = request.json
-        listing_id = int(payload['listing_id'])
-        user = int(payload['user_id'])
+        
+        listing_id = payload['listing_id']
+        user = payload['user_id']
 
         deletion = service.handle_delete_listing(listing_id, user)
 
@@ -178,6 +180,7 @@ def create_app(test_config=None):
     @app.route('/view_bids', methods=['GET'])
     def view_bids():
         user_id = int(request.args.get('user_id'))
+        print(user_id, type(user_id), flush=True)
         listings = service.view_user_bids(user_id)
 
         response = create_response(200 if listings else 404, 
@@ -202,18 +205,19 @@ def create_app(test_config=None):
     #     return response
 
 
-    @app.route('/stop_auction', methods=["POST]"])
+    @app.route('/stop_auction', methods=["POST"])
     def stop_auction():
         payload = request.json
-        admin = int(payload['admin_id'])
-        listing_id = int(payload['listing_id'])
+        admin = payload['admin_id']
+        listing_id = payload['listing_id']
         listing = service.handle_get_listing(listing_id)
+        del listing['_id']
 
         details = {
             'status': 'complete',
             'end_time': datetime.today()
         }
-
+        print(details,"216print", flush=True)
         stop = service.handle_stop_auction(admin, listing, details)
 
         if stop == 'success':
@@ -225,13 +229,14 @@ def create_app(test_config=None):
     @app.route('/take_bid', methods=["POST"])
     def take_bid():
 
-        payload = request.json
-        bidder = int(payload['user_id'])
-        highest_bid = float(payload['bid'])
-        listing_id = int(payload['listing_id'])
+        payload = json.loads(request.json)
+        bidder = payload['user_id']
+        highest_bid = payload['bid']
+        listing_id = payload['listing_id']
 
         listing = service.handle_get_listing(listing_id)
-
+        del listing['_id']
+        print(listing, flush=True)
         if not listing:
             return create_response(404, "Listing not found")
         elif highest_bid < listing['current_price'] + listing['increment']:
@@ -255,9 +260,8 @@ def create_app(test_config=None):
     @app.route('/view_metrics', methods=["GET"])
     def view_metrics():
 
-        payload = request.json
-        window_start = datetime.strptime(payload['window_start'], "%Y-%m-%d %H:%M:%S")
-        window_end = datetime.strptime(payload['window_end'], "%Y-%m-%d %H:%M:%S")
+        window_start = datetime.strptime(request.args.get('window_start'), '%Y-%m-%dT%H:%M')
+        window_end = datetime.strptime(request.args.get('window_end'), '%Y-%m-%dT%H:%M')
 
         req_auctions = service.handle_view_metrics(window_start, window_end)
 
@@ -299,6 +303,7 @@ class AuctionService:
             listing_obj['description'] = item_details['item_description']
             listing_obj['seller'] = int(item_details['item_owner'])
             listing_obj['item_categories'] = item_details['item_categories']
+            listing_obj['seller_email'] = item_details['item_owner_email']
 
             listing_obj['end_time'] = datetime.strptime((item_details['end_time']), '%Y-%m-%dT%H:%M')
             listing_obj['endgame'] = datetime.strptime((item_details['endgame']), '%Y-%m-%dT%H:%M')
@@ -308,7 +313,7 @@ class AuctionService:
             listing_obj['alert_id'] = str(listing_obj['listing_id']) + 'alert'
             listing_obj['status'] = 'prep'
 
-            self.db.insert_one(listing_obj)     
+            self.db.insert_one(listing_obj)
             listing = self.handle_get_listing(listing_obj['listing_id'])
 
             starter = listing_obj['start_time']
@@ -344,7 +349,7 @@ class AuctionService:
     def handle_delete_listing(self, listing_id, user):
 
         listing = self.db.find_one({'listing_id': listing_id})
-
+        print(listing['seller'], listing['bid_list'], flush=True)
         if not listing:
             return None
         elif listing['seller'] != user or len(listing['bid_list']) > 0:
@@ -361,58 +366,60 @@ class AuctionService:
             return 'success'
 
     
-    def handle_update_listing(self, user, listing, details, stop_auction=False):
+    def handle_update_listing(self, user, listing, details, bypass=False):
 
         if not listing:
             return None
         elif listing['seller'] != user:
             return 'unauthorized'
 
-        if not details['listing_name']:
-            del details['listing_name']
-        if not details['description']:
-            del details['description']
-        if not details['status']:
-            del details['status']
+        if not bypass:
+            if not details['listing_name']:
+                del details['listing_name']
+            if not details['description']:
+                del details['description']
+            if not details['status']:
+                del details['status']
 
-        if details['starting_price']:
-            details["starting_price"] = float(details['starting_price'])
-        else:
-            del details['starting_price']
+            if details['starting_price']:
+                details["starting_price"] = float(details['starting_price'])
+            else:
+                del details['starting_price']
 
-        if details['increment']:
-            details['increment'] = int(details['increment'])
-        else:
-            del details['increment']
+            if details['increment']:
+                details['increment'] = int(details['increment'])
+            else:
+                del details['increment']
 
-        if details['start_time']:
-            details['start_time'] = datetime.strptime(details['start_time'], '%Y-%m-%dT%H:%M')
-        else:
-            del details['start_time']
+            if details['start_time']:
+                details['start_time'] = datetime.strptime(details['start_time'], '%Y-%m-%dT%H:%M')
+            else:
+                del details['start_time']
 
-        if details['end_time']:
-            details['end_time'] = datetime.strptime(details['end_time'], '%Y-%m-%dT%H:%M')
-        else:
-            del details['end_time']
+            if details['end_time']:
+                details['end_time'] = datetime.strptime(details['end_time'], '%Y-%m-%dT%H:%M')
+            else:
+                del details['end_time']
 
-        if details['endgame']:
-            details['endgame'] = datetime.strptime(details['endgame'], '%Y-%m-%dT%H:%M')
-        else:
-            del details['endgame']
+            if details['endgame']:
+                details['endgame'] = datetime.strptime(details['endgame'], '%Y-%m-%dT%H:%M')
+            else:
+                del details['endgame']
 
 
-        time_mods = []
-        keys = ['start_time','end_time','endgame']
-        for k in keys:
-            if k in details.keys():
-                time_mods.append(details[k])        
+            time_mods = []
+            keys = ['start_time','end_time','endgame']
+            for k in keys:
+                if k in details.keys():
+                    time_mods.append(details[k])        
 
-        if not stop_auction:
             jobs = [listing['start_id'], listing['stop_id'], listing['alert_id']]
             for i, mod in enumerate(time_mods):
                 job_id = jobs[i]
                 self.scheduler.reschedule_job(job_id, 'date', run_date=mod)
-        
+
+        print(details, "415print", flush=True)
+
         self.db.update_one({'listing_id': listing['listing_id']}, {'$set' : details})
 
         return 'success'
@@ -423,9 +430,9 @@ class AuctionService:
         live_auctions = list(self.db.find({'status': 'live'}))
 
         if sort == "Nearest to end":
-            output = sorted(live_auctions, key=lambda listing: datetime.strptime(listing['end_time'], "%Y-%m-%d %H:%M:%S"))
+            output = sorted(live_auctions, key=lambda listing: listing['end_time']) #datetime.strptime(listing['end_time'], "%Y-%m-%d %H:%M:%S")
         elif sort == "Furthest from end":
-            output = sorted(live_auctions, key=lambda listing: datetime.strptime(listing['end_time'], "%Y-%m-%d %H:%M:%S"), reverse=True)
+            output = sorted(live_auctions, key=lambda listing: listing['end_time'], reverse=True) #datetime.strptime(listing['end_time'], "%Y-%m-%d %H:%M:%S")
         else:
             output = live_auctions
 
@@ -463,7 +470,7 @@ class AuctionService:
     
     def handle_stop_auction(self, user, listing, details={'status':'complete'}):
 
-        stop = self.handle_update_listing(user, listing, details, stop_auction=True)
+        stop = self.handle_update_listing(user, listing, details, bypass=True)
         self.pass_winner(listing['listing_id'])
 
         return stop
@@ -476,6 +483,7 @@ class AuctionService:
         listing_name = listing['listing_name']
         listing_id = listing['listing_id']
         seller = listing['seller_email']
+        # seller = 'cvg117@gmail.com'
         bid_list = []
 
         bid = [bidder, highest_bid, datetime.today()]
@@ -487,7 +495,7 @@ class AuctionService:
         bid_list.insert(0, bid)
         accepted = self.handle_update_listing(listing['seller'], listing, 
                                             {'current_price' : highest_bid, 
-                                            'bid_list': bid_list})
+                                            'bid_list': bid_list}, bypass=True)
         
         if prior_leader and bidder != prior_leader:
             rv = (accepted, prior_leader, prior_bid, listing_id, listing_name, seller, highest_bid, bidder)
@@ -510,7 +518,6 @@ class AuctionService:
 
         if listing['bid_list']:
             winner, amount, _ = listing['bid_list'][0]
-            method_info = listing['method_info']
             method_info = randint(1000000000000000, 9999999999999999)
             payout_details = {
                     'user_id': winner,
@@ -524,16 +531,15 @@ class AuctionService:
                     }
                 }
 
-            resp = requests.post(
+            requests.post(
                 "http://service.payment:5000/pay_for_cart", payout_details)
-        return resp
 
 
     def view_user_bids(self, user_id):
 
         high_bids = []
-        listings = list(self.db.find({'bid_list':user_id}, {'_id': False, 'listing_id': 1, 'listing_name': 1, 'bid_list':1}))
-
+        listings = list(self.db.find({'status':'live'}, {'_id': False, 'listing_id': 1, 'listing_name': 1, 'bid_list':1}))
+        print(listings, flush=True)
         for listing in listings:
             for bid in listing['bid_list']:
                 if bid[0] == user_id:
