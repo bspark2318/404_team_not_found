@@ -82,24 +82,10 @@
         <div class="row">
             <div class="column left">
                 <div class="container">
-                    <form action="/action_page.php" methods="POST",>   <!-- post api-->
-                        <!-- <label for="itemId"><b>Create, change, or bid on a listing by entering its Item ID:</b></label> -->
-                        <button name="listing_action">Create Listing</button>
-                        <input type="text" placeholder="Enter Item ID" name="listing_id" required>
-                        <br>
-                        <button name="listing_action">Delete Listing</button>
-                        <input type="text" placeholder="Enter Item ID" name="listing_id" required>
-                        <input type="text" placeholder="Enter User ID" name="user_id" required>
-                        
-                        <button name="listing_action">Update Listing</button>
-                        <input type="text" placeholder="Enter Item ID" name="listing_id" required>
-                        <input type="text" placeholder="Enter User ID" name="user_id" required>
-                        <input type="text" placeholder="Enter your changes" name="details" required>
-
-                        <button name="listing_action">Place a Bid</button>
-                        <input type="text" placeholder="Enter Item ID" name="listing_id" required>
-                        <input type="text" placeholder="Enter User ID" name="user_id" required>
-                        <input type="number" placeholder="Bid Amount" name="bid" required>
+                    <form action="/action_page.php" methods="post",>   <!-- post api-->
+                        <a href="{{ url_for('create_listing') }}"><button name="create_listing" type="button">Create Listing</button></a>
+                        <a href="{{ url_for('delete_listing') }}"><button name="delete_listing" type="button">Delete Listing</button></a>
+                        <a href="{{ url_for('update_listing') }}"><button name="update_listing" type="button">Update Listing</button></a>
 
                 </div>
             </div>
@@ -107,9 +93,11 @@
             <div class="column middle">
                 <div class="container">
                     <form action="/action_page.php" method="get">   <!-- get api-->
-                        <button name="auction_action">View Live Auctions</button>
-                        <button name="auction_action">See Auction Details</button>
-                        <input type="text" placeholder="Enter Item ID" name="listing_id" required>
+                        <a href="{{ url_for('view_bids') }}"><button name="view_bids" type="button">View Bids</button></a>
+                        <a href="{{ url_for('get_listing') }}"><button name="get_listing" type="button">See Auction Details</button></a>
+                    </form>
+                    <form action="/action_page.php" method="post">   <!-- post api-->
+                        <a href="{{ url_for('bid') }}"><button name="bid" type="button">Place a Bid</button></a>
                     </form>
                 </div>
             </div>
@@ -117,9 +105,12 @@
             <div class="column right">
                 <div class="container">
                     <form action="/action_page.php" method="get">   <!-- get api-->
-                    <!-- <button name="admin">View Live Auctions</button> -->
-                    <!-- <button name="admin">View Recent Auction Results</button> -->
-                    <!-- <button name="admin">View Bids</button> -->
+                        <a href="{{ url_for('view_live') }}"><button name="view_live" type="button">View Live Auctions</button></a>
+                        <a href="{{ url_for('view_metrics') }}"><button name="view_metrics" type="button">View Auction Results</button></a>
+                    </form>
+                    <form action="/action_page.php" method="post">   <!-- post api-->
+                        <a href="{{ url_for('stop_auction') }}"><button name="stop_auction" type="button">End an Auction</button></a>
+                    </form>
                 </div>
             </div>
         </div>

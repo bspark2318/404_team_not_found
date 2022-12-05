@@ -58,11 +58,11 @@
 <div class="row">
     <div class="column middle">
         <div class="container">
-            <form action="/delete_listing.php" method="delete">   <!-- delete api-->
-                <label for="listing_id">Enter a listing ID for deletion:
+            <form action="/destroy_listing" method="delete">   <!-- delete api-->
+                <label for="listing_id"><b>Enter a listing ID for deletion:</b>
                     <input type="number"  step="1" id="listing_id" placeholder="Listing ID" name="listing_id">
                 </label>
-
+                <input type="submit" value="Submit">
             </form>
         </div>
     </div>

@@ -101,6 +101,10 @@ def logoutUser():
     return redirect(url_for('login'))
 
 
+@app.route('/auction')
+def auction_home():
+    return render_template('auction.html')
+
 @app.route('/create_listing')
 def create_listing():
     return render_template('create_listing.html')
@@ -117,7 +121,7 @@ def make_listing():
         "increment": form["increment"]
     }
     resp = requests.post("http://service.auction:5000/create_listing",params=params)
-    if resp.json()['status_code'] == "200":
+    if resp.json()['status_code'] == "201":
         return resp.json()
     else:
         return resp.json()["detail"]
@@ -126,32 +130,139 @@ def make_listing():
 def get_listing():
     return render_template('get_listing.html')
 
+@app.route('/find_listing')
+def find_listing():
+    form = request.form
+    params = {
+        "listing_id": form['listing_id']
+    }
+    resp = requests.get("http://service.auction:5000/get_listing",params=params)
+    if resp.json()['status_code'] == "200":
+        return resp.json()
+    else:
+        return resp.json()["detail"]
+
 @app.route('/delete_listing')
 def delete_listing():
     return render_template('delete_listing.html')
+
+@app.route('/destroy_listing')
+def destroy_listing():
+    form = request.form
+    params = {
+        "listing_id": form['listing_id'],
+        'user_id': session['user']
+    }
+    resp = requests.get("http://service.auction:5000/delete_listing",params=params)
+    if resp.json()['status_code'] == "200":
+        return resp.json()
+    else:
+        return resp.json()["detail"]
+
 
 @app.route('/update_listing')
 def update_listing():
     return render_template('update_listing.html')
 
+@app.route('/modify_listing')
+def modify_listing():
+    form = request.form
+    inputs = ['listing_name', 'description', 'starting_price', 'increment', 'start_time', 'end_time', 'endgame']
+    params = {
+        'listing_id': form['listing_id'],
+        'user_id': session['user'],
+    }
+    for input in inputs:
+        if form[input]:
+            params[input] = form[input]
+    # params = {
+    #     'listing_id': form['listing_id'],
+    #     'user_id': session['user'],
+    #     'listing_name': form['listing_name'],
+    #     'description': form['description'],
+    #     'starting_price': form['starting_price'],
+    #     'increment': form['increment'],
+    #     'start_time': form['start_time'],
+    #     'end_time': form['end_time'],
+    #     'endgame': form['endgame']
+    # }
+    resp = requests.post("http://service.auction:5000/update_listing",params=params)
+    if resp.json()['status_code'] == "200":
+        return resp.json()
+    else:
+        return resp.json()["detail"]
+
 @app.route('/view_live')
 def view_live():
     return render_template('view_live.html')
+
+@app.route('/see_live')
+def see_live():
+    form = request.form
+    resp = requests.get("http://service.auction:5000/view_live",params=form)
+    if resp.json()['status_code'] == "200":
+        return resp.json()
+    else:
+        return resp.json()["detail"]
 
 @app.route('/stop_auction')
 def stop_auction():
     return render_template('stop_auction.html')
 
-@app.route('/bid', methods=['POST'])
+@app.route('/halt_auction')
+def halt_auction():
+    form = request.form
+    params = {
+        'listing_id': form['listing_id'],
+        'admin_id': session['user']
+    }
+    resp = requests.post("http://service.auction:5000/stop_auction",params=params)
+    if resp.json()['status_code'] == "200":
+        return resp.json()
+    else:
+        return resp.json()["detail"]
+
+@app.route('/bid')
 def bid():
     return render_template('bid.html')
 
-@app.route('/view_metrics', methods=['POST'])
+@app.route('/take_bid')
+def take_bid():
+    form = request.form
+    params = {
+        'listing_id': form['listing_id'],
+        'user_id': session['user'],
+        'bid': form['bid']
+    }
+    resp = requests.post("http://service.auction:5000/take_bid",params=params)
+    if resp.json()['status_code'] == "200":
+        return resp.json()
+    else:
+        return resp.json()["detail"]
+
+@app.route('/view_metrics')
 def view_metrics():
     return render_template('view_metrics.html')
 
-@app.route('/view_bids', methods=['GET'])
+@app.route('/see_metrics')
+def see_metrics():
+    form = request.form
+    params = {
+        'window_start': form['window_start'],
+        'window_end': form['window_end']
+    }
+    resp = requests.get("http://service.auction:5000/view_metrics",params=params)
+    if resp.json()['status_code'] == "200":
+        return resp.json()
+    else:
+        return resp.json()["detail"]
+
+@app.route('/view_bids')
 def view_bids():
+    return render_template('view_bids.html')
+
+@app.route('/see_bids')
+def see_bids():
     params = {
         'user_id' : session['user']
     }

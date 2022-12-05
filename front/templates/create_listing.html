@@ -5,7 +5,7 @@
     <style>
         body {font-family: Arial, Helvetica, sans-serif;}
         /* form {border: 3px solid #f1f1f1;} */
-        input[type=text], input[type=datetime-local], input[type=number] {
+        input[type=text], input[type=datetime-local], input[type=number], input[type="submit"] {
             width: 100%;
             padding: 12px 20px;
             margin: 8px 0;
@@ -59,27 +59,27 @@
 <div class="row">
     <div class="column middle">
         <div class="container">
-            <form action="/create_listing.php" method="post">   <!-- post api-->
-                <label for="item_id">Enter the Item ID you would like to list for auction:
+            <form action="/make_listing" method="post">   <!-- post api-->
+                <label for="item_id"><b>Enter the Item ID you would like to list for auction:</b>
                     <input type="number" id = "item_id" placeholder="Enter Item ID" name="item_id" required>
                 </label>
 
-                <label for="start_time">Enter auction's start date and time:
+                <label for="start_time"><b>Enter auction's start date and time:</b>
                     <input type="datetime-local" placeholder="yyyy-mm-dd hh:mm:ss" id="start_time" name="start_time">
                 </label>
 
-                <label for="end_time">Enter auction's start date and time:
+                <label for="end_time"><b>Enter auction's start date and time:</b>
                     <input type="datetime-local" placeholder="yyyy-mm-dd hh:mm:ss" id="end_time" name="end_time">
                 </label>
 
-                <label for="endgame">Select an alert time for bids closing:
+                <label for="endgame"><b>Select an alert time for bids closing:</b>
                     <input type="datetime-local" placeholder="yyyy-mm-dd hh:mm:ss" id="endgame" name="endgame">
                 </label>
 
-                <label for="increment">Enter minimum bid increment:
+                <label for="increment"><b>Enter minimum bid increment:</b>
                     <input type="number" id="increment" placeholder="Bid increment" name="increment">
                 </label>
-
+                <input type="submit" value="Submit">
             </form>
         </div>
     </div>

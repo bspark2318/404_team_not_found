@@ -58,15 +58,11 @@
 <div class="row">
     <div class="column middle">
         <div class="container">
-            <form action="/stop_auction.php" method="post">   <!-- post api-->
-            <label for="listing_id">Enter Listing ID of the auction you would like to stop:
+            <form action="/halt_auction" method="post">   <!-- post api-->
+            <label for="listing_id"><b>Enter Listing ID of the auction you would like to stop:</b>
                 <input type="number" id = "listing_id" placeholder="Enter Listing ID" name="listing_id" required>
             </label>
-
-            <label for="admin_id">Enter your Admin ID:
-                <input type="number" placeholder="Enter ID" id="admin_id" name="admin_id">
-            </label>
-
+            <input type="submit" value="Submit">
             </form>
         </div>
     </div>

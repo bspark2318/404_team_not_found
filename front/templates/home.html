@@ -59,7 +59,7 @@
           opacity: 0.8;
         }
         
-        button[name="search"] {
+        button[name="search"], button[name="auction"] {
           background-color: #f44336;
           color: white;
           padding: 14px 20px;
@@ -68,8 +68,12 @@
           cursor: pointer;
           width: 100%;
         }
-        
+
         button[name="search"]:hover {
+          opacity: 0.8;
+        }
+
+        button[name="auction"]:hover {
           opacity: 0.8;
         }
 
@@ -141,7 +145,7 @@
         </div>
 
         <div class="container", name="search_bar">
-            <button name="search">Auction Portal</button>
+            <a href="{{ url_for('auction') }}"><button name="auction">Auction Portal</button></a>
         </div>
 
         <div class="row">

@@ -5,7 +5,7 @@
     <style>
         body {font-family: Arial, Helvetica, sans-serif;}
         /* form {border: 3px solid #f1f1f1;} */
-        input[type=number] {
+        input[type=list]{
             width: 100%;
             padding: 12px 20px;
             margin: 8px 0;
@@ -53,24 +53,20 @@
 
     </style>
 
-<h3>Submit a bid</h3>
+<h3>View Live Auctions</h3>
 
 <div class="row">
     <div class="column middle">
         <div class="container">
-            <form action="/bid.php" method="post">   <!-- post api-->
-                <label for="listing_id">Enter the ID of the listing you would like to bid on:
-                    <input type="number" id = "listing_id" placeholder="Enter Listing ID" name="listing_id" required>
+            <form action="/see_live" method="get">   <!-- get api-->
+                <label for="sort"><b>How would you like to sort the return?:</b>
+                    <input list="sort" name="sort">
+                    <datalist id ="sort">
+                      <option value = "Nearest to end">
+                      <option value = "Furthest from end">
+                      <option value = "Earliest created">
                 </label>
-
-                <label for="user_id">Enter your User ID:
-                    <input type="number" id = "user_id" placeholder="Enter User ID" name="user_id" required>
-                </label>
-
-                <label for="bid">How much would you like to bid?:
-                    <input type="number" id = "bid" placeholder="Amount" name="bid">
-                </label>
-
+                <input type="submit" value="Submit">
             </form>
         </div>
     </div>
