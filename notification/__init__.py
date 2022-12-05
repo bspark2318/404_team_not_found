@@ -48,7 +48,7 @@ def create_app(test_config=None):
         response_json["message"] = "\"{}\" successful".format(noti_type) if status else "\"{}\" failed".format(noti_type)
         response_json["payload"] = response_payload
         response = make_response(jsonify(response_payload))
-        response.status_code = 200 if status else 400   
+        response.status_code = 201 if status else 400   
         return response
 
     # a simple page that says hello
