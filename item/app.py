@@ -724,16 +724,18 @@ def pushToAuction():
 
     Item_class.objects(item_id=item_id_to_push).update_one(set__item_status="Auction")
 #####################################
-    params = {
-        "item_details": Item_class.objects(item_id=item_id_to_push)[0].to_json(),
-        "status": False,
-        "increment": 5.0
+    # params = {
+    #     "item_details": Item_class.objects(item_id=item_id_to_push)[0].to_json(),
+    # }
+
+    params ={
+        'item_id': item_id_to_push
     }
 
     # push to auction microservice
-    response = requests.post("http://service.auction:5000/ENDPOINT", params)
+    response = requests.post("http://service.auction:5000/create_listing", params)
 
-    if response.json()['status_code'] == "200":
+    if response.json()['status_code'] == "201" or response.json()['status_code'] == "200":
         return response.json()["detail"]
     else:
         return response.json()["detail"]
