@@ -550,21 +550,23 @@ def create_listing():
 @app.route('/make_listing', methods=['GET', 'POST'])
 def make_listing():
     form = request.form
+    
     params = {
-        "item_id": form["item_id"],
-        "start_time":form["start_time"],
-        "end_time":form["end_time"],
-        "endgame":form["endgame"],
+        "item_id": int(form["item_id"]),
+        "start_time": form["start_time"],
+        "end_time": form["end_time"],
+        "endgame": form["endgame"],
         "user_id": session['user'],
         "increment": form["increment"]
     }
-    resp = requests.post("http://service.auction:5000/create_listing",params=params)
-    if not resp:
-        return 'No Item Found'
-    if resp.json()['status_code'] == "201":
+    json_params = json.dumps(params) 
+    resp = requests.post("http://service.auction:5000/create_listing",json=json_params)
+    if resp.status_code == 201 or resp.status_code == 200:
         return resp.json()
+    elif resp.status_code == 404:
+        return "Item not found"
     else:
-        return resp.json()["detail"]
+        return "Execution Failed"
 
 @app.route('/get_listing', methods=['GET', 'POST'])
 def get_listing():
@@ -573,31 +575,43 @@ def get_listing():
 @app.route('/find_listing', methods=['GET', 'POST'])
 def find_listing():
     form = request.form
-    # params = {
-    #     "listing_id": form['listing_id']
-    # }
-    resp = requests.get("http://service.auction:5000/get_listing",params=form)
-    if resp.json()['status_code'] == "200":
-        return resp.json()
-    else:
-        return resp.json()["detail"]
 
-@app.route('/delete_listing', methods=['GET', 'DELETE'])
+    print(form, flush=True)
+    through = {}
+    through['listing_id'] = int(form['listing_id'])
+
+    resp = requests.get("http://service.auction:5000/get_listing",params=through)
+    if resp.status_code == 201 or resp.status_code == 200:
+        return resp.json()
+    elif resp.status_code == 404:
+        return "Item not found"
+    else:
+        return "Execution Failed"
+
+@app.route('/delete_listing', methods=['POST', 'GET'])
 def delete_listing():
     return render_template('delete_listing.html')
 
-@app.route('/destroy_listing', methods=['GET', 'DELETE'])
+@app.route('/destroy_listing', methods=['POST', 'GET'])
 def destroy_listing():
-    form = request.form
+    print(request.form, flush=True)
+    form = request.form.to_dict()
+    print(form, flush=True)
     params = {
-        "listing_id": form['listing_id'],
-        'user_id': session['user']
+        "listing_id": int(form['listing_id']),
+        'user_id': int(session['user'])
     }
-    resp = requests.get("http://service.auction:5000/delete_listing",params=params)
-    if resp.json()['status_code'] == "200":
-        return resp.json()
+
+    print(params, flush = True)
+
+    resp = requests.delete("http://service.auction:5000/delete_listing",json=params)
+    print(resp, flush=True)
+    if resp.status_code == 201 or resp.status_code == 200:
+        return "Item Deleted"
+    elif resp.status_code == 404:
+        return "Listing not found"
     else:
-        return resp.json()["detail"]
+        return "Unauthorized"
 
 
 @app.route('/update_listing', methods=['GET', 'POST'])
@@ -606,31 +620,27 @@ def update_listing():
 
 @app.route('/modify_listing', methods=['GET', 'POST'])
 def modify_listing():
-    form = request.form
-    inputs = ['listing_name', 'description', 'starting_price', 'increment', 'start_time', 'end_time', 'endgame']
+    form = request.form.to_dict()
+    print(form, flush=True)
+    inputs = ['listing_name', 'description', 'starting_price', 'increment', 'start_time', 'end_time', 'endgame', 'status']
     params = {
-        'listing_id': form['listing_id'],
-        'user_id': session['user'],
+        'listing_id': int(form['listing_id']),
+        'user_id': int(session['user'])
     }
-    for input in inputs:
-        if form[input]:
-            params[input] = form[input]
-    # params = {
-    #     'listing_id': form['listing_id'],
-    #     'user_id': session['user'],
-    #     'listing_name': form['listing_name'],
-    #     'description': form['description'],
-    #     'starting_price': form['starting_price'],
-    #     'increment': form['increment'],
-    #     'start_time': form['start_time'],
-    #     'end_time': form['end_time'],
-    #     'endgame': form['endgame']
-    # }
-    resp = requests.post("http://service.auction:5000/update_listing",params=params)
-    if resp.json()['status_code'] == "200":
+
+    for key, value in form.items():
+        if key in inputs:
+            params[key] = value
+
+    print(params, flush=True)
+
+    resp = requests.post("http://service.auction:5000/update_listing",json=params)
+    if resp.status_code == 201 or resp.status_code == 200:
         return resp.json()
+    elif resp.status_code == 404:
+        return "Listing not found"
     else:
-        return resp.json()["detail"]
+        return "Failed Execution"
 
 @app.route('/view_live', methods=['GET', 'POST'])
 def view_live():
@@ -639,11 +649,13 @@ def view_live():
 @app.route('/see_live', methods=['GET', 'POST'])
 def see_live():
     form = request.form
-    resp = requests.get("http://service.auction:5000/view_live",params=form)
-    if resp.json()['status_code'] == "200":
+    resp = requests.get("http://service.auction:5000/view_live", form)
+    if resp.status_code == 201 or resp.status_code == 200:
         return resp.json()
+    elif resp.status_code == 404:
+        return "None live"
     else:
-        return resp.json()["detail"]
+        return "Failed Execution"
 
 @app.route('/stop_auction', methods=['GET', 'POST'])
 def stop_auction():
@@ -651,16 +663,23 @@ def stop_auction():
 
 @app.route('/halt_auction', methods=['GET', 'POST'])
 def halt_auction():
-    form = request.form
+
+    form = request.form.to_dict()
     params = {
-        'listing_id': form['listing_id'],
-        'admin_id': session['user']
+        'listing_id': int(form['listing_id']),
+        'admin_id': int(session['user'])
     }
-    resp = requests.post("http://service.auction:5000/stop_auction",params=params)
-    if resp.json()['status_code'] == "200":
+
+    print(params,"662print", flush=True)
+
+    resp = requests.post("http://service.auction:5000/stop_auction",json=params)
+    print(resp, "665print", flush=True)
+    if resp.status_code == 201 or resp.status_code == 200:
         return resp.json()
+    elif resp.status_code == 404:
+        return "Auction not found"
     else:
-        return resp.json()["detail"]
+        return "Failed Execution"
 
 @app.route('/bid', methods=['GET', 'POST'])
 def bid():
@@ -668,17 +687,23 @@ def bid():
 
 @app.route('/take_bid', methods=['GET', 'POST'])
 def take_bid():
-    form = request.form
+    form = request.form.to_dict()
     params = {
-        'listing_id': form['listing_id'],
-        'user_id': session['user'],
-        'bid': form['bid']
+        'listing_id': int(form['listing_id']),
+        'user_id': int(session['user']),
+        'bid': float(form['bid'])
     }
-    resp = requests.post("http://service.auction:5000/take_bid",params=params)
-    if resp.json()['status_code'] == "200":
+
+    print(params, flush=True)
+    json_params = json.dumps(params)
+
+    resp = requests.post("http://service.auction:5000/take_bid",json=json_params)
+    if resp.status_code == 201 or resp.status_code == 200:
         return resp.json()
+    elif resp.status_code == 404:
+        return "Listing not found"
     else:
-        return resp.json()["detail"]
+        return "Failed Execution"
 
 @app.route('/view_metrics', methods=['GET', 'POST'])
 def view_metrics():
@@ -686,16 +711,23 @@ def view_metrics():
 
 @app.route('/see_metrics', methods=['GET', 'POST'])
 def see_metrics():
-    form = request.form
+    form = request.form.to_dict()
+    print(form, flush=True)
     params = {
         'window_start': form['window_start'],
         'window_end': form['window_end']
     }
+
+    print(params, flush=True)
+
+
     resp = requests.get("http://service.auction:5000/view_metrics",params=params)
-    if resp.json()['status_code'] == "200":
+    if resp.status_code == 201 or resp.status_code == 200:
         return resp.json()
+    elif resp.status_code == 404:
+        return "Listing not found"
     else:
-        return resp.json()["detail"]
+        return "Failed Execution"
 
 @app.route('/view_bids', methods=['GET', 'POST'])
 def view_bids():
@@ -703,11 +735,23 @@ def view_bids():
 
 @app.route('/see_bids', methods=['GET', 'POST'])
 def see_bids():
+    print('I AM VIEWING', flush=True)
+    print(request, flush=True)
     params = {
-        'user_id' : session['user']
+        'user_id' : int(session['user'])
     }
+
+    print(params, '729', flush=True)
+
     resp = requests.get("http://service.auction:5000/view_bids",params=params)
-    return resp.json()
+    print(resp, '732', flush=True)
+
+    if resp.status_code == 201 or resp.status_code == 200:
+        return resp.json()
+    elif resp.status_code == 404:
+        return "No active bids"
+    else:
+        return "Failed Execution"
 
 
 if __name__ == "__main__":

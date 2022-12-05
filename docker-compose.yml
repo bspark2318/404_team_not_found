@@ -96,25 +96,25 @@ services:
     volumes:
       - /Users/user/data/mongo/user
 
-  # auction:
-  #   build: ./auction/.
-  #   container_name: auction_service
-  #   environment: 
-  #     - MONGODB_CONNSTRING=mongodb://auction_db
-  #   ports:
-  #     - "5004:5000"
-  #   networks:
-  #     default:
-  #       aliases:
-  #         - service.auction
+  auction:
+    build: ./auction/.
+    container_name: auction_service
+    environment: 
+      - MONGODB_CONNSTRING=mongodb://auction_db
+    ports:
+      - "5004:5000"
+    networks:
+      default:
+        aliases:
+          - service.auction
 
-  # auction_db:
-  #   image: mongo:latest
-  #   container_name: auction_db
-  #   ports:
-  #     - "27021:27017"
-  #   volumes:
-  #     - /Users/user/data/mongo/auction
+  auction_db:
+    image: mongo:latest
+    container_name: auction_db
+    ports:
+      - "27021:27017"
+    volumes:
+      - /Users/user/data/mongo/auction
 
   front:
     build: ./front/.
