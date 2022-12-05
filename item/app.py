@@ -57,6 +57,18 @@ def isfloat(num):
         return False
 
 
+def admin_status(user_id):
+    params = { 'user_id': user_id }
+    response = requests.get("http://service.user:5000/getAdminStatus",params=params)
+
+    if response.json()['status_code'] == "200":
+        op = response.json()["detail"]["user_data"]
+    else:
+        op = response.json()["detail"]
+    print(op, flush=True)
+    return op
+
+
 @app.route('/categorize', methods=['POST'])
 def Categorize():
     '''
@@ -96,14 +108,15 @@ def Categorize():
                     "error" : 'Such a category ID does not exist'
                 }
             })
-
-    if not (Item_class.objects(item_id=item_inp)[0].item_owner == int(request.args.get('session_owner'))):
-        return jsonify({
-                "status_code": "400",
-                "detail": {
-                    "error" : "You are not the owner and cannot make this update"
-                }
-            })
+    if_admin = admin_status(int(request.args.get('session_owner')))
+    if not if_admin:
+        if not (Item_class.objects(item_id=item_inp)[0].item_owner == int(request.args.get('session_owner'))):
+            return jsonify({
+                    "status_code": "400",
+                    "detail": {
+                        "error" : "You are not the owner and cannot make this update"
+                    }
+                })
 
     item_out = Item_class.objects(item_id=item_inp)[0]
     cat_out = Category_class.objects(category_id=categorize_inp)[0]
@@ -120,7 +133,41 @@ def Categorize():
     })
 
 
-#FLAGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGg
+@app.route('/flag', methods=['POST'])
+def Flag():
+    '''
+    Fucntion to let a user flag an item
+    '''
+    item_inp = int(request.args.get('item_id'))
+    flagger = int(request.args.get('session_owner'))
+
+    if not isint(item_inp):
+        return jsonify({
+                "status_code": "400",
+                "detail": {
+                    "error" : "Item Id has to be an integer"
+                }
+            })
+
+    presence_check = len(Item_class.objects(item_id=item_inp))
+    if presence_check == 0:
+        return jsonify({
+                "status_code": "400",
+                "detail": {
+                    "error" : 'Such an item ID does not exist'
+                }
+            })
+
+    item_out = Item_class.objects(item_id=item_inp)[0]
+
+    if flagger not in item_out.item_flag_list:
+        item_out.item_flag_list.append(flagger)
+        item_out.save()
+
+    return jsonify({
+        "status_code": "200",
+        "detail": "Item Flagged!"
+    })
 
 
 @app.route('/searchItemId', methods=['GET']) #### status code
@@ -428,17 +475,50 @@ def DeleteItem():
                 }
             })
 
-    if not (Item_class.objects(item_id=item_id_to_delete)[0].item_owner == int(request.args.get('session_owner'))):
+    if_admin = admin_status(int(request.args.get('session_owner')))
+    if not if_admin:
+        if not (Item_class.objects(item_id=item_id_to_delete)[0].item_owner == int(request.args.get('session_owner'))):
+            return jsonify({
+                    "status_code": "400",
+                    "detail": {
+                        "error" : "You are not the owner and cannot make this delete"
+                    }
+                })
+
+    Item_class.objects().filter(item_id=item_id_to_delete).delete()
+    return jsonify({
+        "status_code": "200",
+        "detail": {
+            "item_id" : "item deleted"
+        }
+    })
+
+
+@app.route('/deleteCartItem', methods=["DELETE"])
+def DeleteCartItem():
+    '''
+    Fucntion to delete an item after payment
+    '''
+    item_id_to_delete = request.args.get('item_id')
+    if not isint(item_id_to_delete):
         return jsonify({
                 "status_code": "400",
                 "detail": {
-                    "error" : "You are not the owner and cannot make this delete"
+                    "error" : "Item Id has to be an integer"
+                }
+            })
+    presence_check = len(Item_class.objects(item_id=item_id_to_delete))
+    if presence_check == 0:
+        return jsonify({
+                "status_code": "400",
+                "detail": {
+                    "error" : "Such an item ID does not exist"
                 }
             })
 
     Item_class.objects().filter(item_id=item_id_to_delete).delete()
     return jsonify({
-        "status_code": "200",
+        "status_code": "204",
         "detail": {
             "item_id" : "item deleted"
         }
@@ -471,14 +551,15 @@ def UpdateItem():
                     "error" : "Such an item ID does not exist"
                 }
             })
-    
-    if not (Item_class.objects(item_id=item_id_to_update)[0].item_owner == int(request.args.get('session_owner'))):
-        return jsonify({
-                "status_code": "400",
-                "detail": {
-                    "error" : "You are not the owner and cannot make this update"
-                }
-            })
+    if_admin = admin_status(int(request.args.get('session_owner')))
+    if not if_admin:
+        if not (Item_class.objects(item_id=item_id_to_update)[0].item_owner == int(request.args.get('session_owner'))):
+            return jsonify({
+                    "status_code": "400",
+                    "detail": {
+                        "error" : "You are not the owner and cannot make this update"
+                    }
+                })
 
     change_to_name = request.args.get('item_name')
     old_value_name = Item_class.objects(item_id=item_id_to_update)[0].item_name
@@ -611,13 +692,15 @@ def DeleteCategory():
                 }
             })
 
-    if not (Category_class.objects(category_id=category_id_to_delete)[0].category_owner == int(request.args.get('category_owner'))):
-        return jsonify({
-                "status_code": "400",
-                "detail": {
-                    "error" : "You are not the owner and cannot make this delete"
-                }
-            })
+    if_admin = admin_status(int(request.args.get('session_owner')))
+    if not if_admin:
+        if not (Category_class.objects(category_id=category_id_to_delete)[0].category_owner == int(request.args.get('session_owner'))):
+            return jsonify({
+                    "status_code": "400",
+                    "detail": {
+                        "error" : "You are not the owner and cannot make this delete"
+                    }
+                })
 
     Category_class.objects().filter(category_id=category_id_to_delete).delete()
     return jsonify({
@@ -653,16 +736,20 @@ def UpdateCategory():
                 }
             })
 
-    if not (Category_class.objects(category_id=category_id_to_update)[0].category_owner == int(request.args.get('session_owner'))):
-        return jsonify({
-                "status_code": "400",
-                "detail": {
-                    "error" : "You are not the owner and cannot make this update"
-                }
-            })
+    if_admin = admin_status(int(request.args.get('session_owner')))
+    if not if_admin:
+        print(Category_class.objects(category_id=category_id_to_update)[0].category_owner, flush=True)
+        print(request.args.get('session_owner'), flush=True)
+        if not (Category_class.objects(category_id=category_id_to_update)[0].category_owner == int(request.args.get('session_owner'))):
+            return jsonify({
+                    "status_code": "400",
+                    "detail": {
+                        "error" : "You are not the owner and cannot make this update"
+                    }
+                })
 
     change_to_name = request.args.get('category_name')
-    old_value_name = Category_class.objects(item_id=category_id_to_update)[0].category_name
+    old_value_name = Category_class.objects(category_id=category_id_to_update)[0].category_name
     
     if change_to_name == "":
         Category_class.objects(category_id=category_id_to_update).update_one(set__category_name=old_value_name)
@@ -714,13 +801,15 @@ def pushToAuction():
                 }
             })
 
-    if not (Item_class.objects(item_id=item_id_to_push)[0].item_owner == int(request.args.get('session_owner'))):
-        return jsonify({
-                "status_code": "400",
-                "detail": {
-                    "error" : "You are not the owner and cannot complete this action"
-                }
-            })
+    if_admin = admin_status(int(request.args.get('session_owner')))
+    if not if_admin:
+        if not (Item_class.objects(item_id=item_id_to_push)[0].item_owner == int(request.args.get('session_owner'))):
+            return jsonify({
+                    "status_code": "400",
+                    "detail": {
+                        "error" : "You are not the owner and cannot complete this action"
+                    }
+                })
 
     Item_class.objects(item_id=item_id_to_push).update_one(set__item_status="Auction")
 
@@ -745,7 +834,7 @@ def pushToAuction():
     #     "status_code": response.status_code,
     #     "detail": response.text
     # })
-######################################
+
 
 class Item_class(db.Document):
     '''

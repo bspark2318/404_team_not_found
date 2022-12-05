@@ -239,7 +239,7 @@ def delete_category():
         'session_owner': session['user'],
         'category_id': form['catId']
     }
-    resp = requests.delete("http://service.item:5000/deleteItem", params=params)
+    resp = requests.delete("http://service.item:5000/deleteCategory", params=params)
 
     if resp.json()['status_code'] == "200":
         return resp.json()["detail"]
@@ -273,6 +273,22 @@ def pushAuction():
         'item_id': form['itemId'],
     }
     resp = requests.post("http://service.item:5000/pushToAuction", params=params)
+
+    if resp.json()['status_code'] == "200":
+        return resp.json()["detail"]
+        # return redirect(url_for('home'))
+    else:
+        return resp.json()["detail"]
+
+
+@app.route('/flagItem', methods=['POST','GET'])
+def flagItem():
+    form = request.form
+    params = {
+        'session_owner': session['user'],
+        'item_id': form['itemId'],
+    }
+    resp = requests.post("http://service.item:5000/flag", params=params)
 
     if resp.json()['status_code'] == "200":
         return resp.json()["detail"]
