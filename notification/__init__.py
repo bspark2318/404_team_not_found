@@ -20,6 +20,7 @@ def create_app(test_config=None):
     load_dotenv()
     connString = os.environ['MONGODB_CONNSTRING']
     
+    
     client = MongoClient(connString, 27017)
     
     db_conn = client.ebay
@@ -145,29 +146,31 @@ def create_app(test_config=None):
 class NotificationService:
     def __init__(self, conn):
         self.db = conn.notification
-        self.mailgun_key = os.environ.get("MAILGUN_API_KEY")
+        self.mailgun_key = os.environ['MAILGUN_API_KEY']
+        self.mailgun_domain = os.environ['MAILGUN_DOMAIN']
+        print(self.mailgun_domain, flush=True)
+        print(self.mailgun_key, flush=True)
         
         
     def send_email(self, recipient, title, content):
         
         resp = requests.post(
-            "https://api.mailgun.net/v3/sandbox275e03f26ba84051bc89593d48ad8b9e.mailgun.org/messages",
+            "https://api.mailgun.net/v3/{}/messages".format(self.mailgun_domain),
 		    auth=("api", self.mailgun_key),
-		    data={"from": "EBay-Like Market <mailgun@sandbox275e03f26ba84051bc89593d48ad8b9e.mailgun.org>",
+		    data={"from": "404 Team Not Found Market <mailgun@{}>".format(self.mailgun_domain),
 			"to": recipient,
 			"subject": title,
 			"text": content})
-    
         return resp
     
     def handle_alert_watchlist(self, item_id, auction_id, timestamp, recipient):
         try:
             ## Handle sending the email
             noti_title = "Watchlist Alert for Auction ID {}".format(auction_id)
-            noti_message = "Item on your watchlist with ID {} has is now available through an auction! Search for auction ID {}!".format(item_id, auction_id)
+            noti_message = "Item on your watchlist with ID {} has is now available through an auction! Search for auction ID {}! \n\nSincerely,\n404 Team Not Found".format(item_id, auction_id)
             noti_timestamp = time.time()
             response = self.send_email(recipient, noti_title, noti_message)
-            print("Watchlist Alert Notification Status: ", response)
+            print("Watchlist Alert Notification Status: ", response, file=sys.stderr)
             
             ## Handle database transaction
             records = []
@@ -191,7 +194,7 @@ class NotificationService:
         try:
             ## Handle sending the email
             noti_title = "Buyer Outbid Alert for Auction \"{}\"".format(auction_title)
-            noti_message = "You have been outbid for the auction with ID {}:\nNew Bid: {}\nOld Bid:{}".format(auction_id, new_bid, old_bid)
+            noti_message = "You have been outbid for the auction with ID {}:\nNew Bid: {}\nOld Bid:{}\n\nSincerely,\n404 Team Not Found".format(auction_id, new_bid, old_bid)
             noti_timestamp = time.time()
             response = self.send_email(recipient, noti_title, noti_message)
             print("Buyer Outbid Alert Notification Status: ", response)
@@ -218,10 +221,10 @@ class NotificationService:
         try:
             ## Handle sending the email
             noti_title = "Seller Bid Alert for Auction \"{}\"".format(auction_title)
-            noti_message = "Your auction with ID {} has received a new bid.\nNew Bid: {}\nOld Bid:{}".format(auction_id, new_bid, old_bid)
+            noti_message = "Your auction with ID {} has received a new bid.\n\nNew Bid: {}\nOld Bid:{}\n\nSincerely,\n404 Team Not Found".format(auction_id, new_bid, old_bid)
             noti_timestamp = time.time()
             response = self.send_email(recipient, noti_title, noti_message)
-            print("Seller Bid Alert Notification Status: ", response)
+            print("Seller Bid Alert Notification Status: ", response, file=sys.stderr)
             
             ## Handle database transaction
             records = []
@@ -249,7 +252,7 @@ class NotificationService:
         try:
             ## Handle sending the email
             noti_title = "Countdown Alert for Auction \"{}\"".format(auction_title)
-            noti_message = "Auction with ID {} is expiring in 10 minutes!\nEnd Time: {}\nCurrent Highest Bid:{}".format(auction_id, end_time, current_bid)
+            noti_message = "Auction with ID {} is expiring in 10 minutes!\n\nEnd Time: {}\nCurrent Highest Bid:{}\n\nSincerely,\n404 Team Not Found".format(auction_id, end_time, current_bid)
             noti_timestamp = time.time()
             response = self.send_email(recipient, noti_title, noti_message)
             print("Countdown Alert Notification Status: ", response)
@@ -279,7 +282,7 @@ class NotificationService:
             request_content = request_body["content"]
             response_content = response_body["content"]
             noti_title = "Responding to the request \"{}\"".format(request_title)
-            noti_message = "Here is the response to your question:\n{}\n\nResponse:\n{}".format(request_content, response_content)
+            noti_message = "Here is the response to your question:\n{}\n\nResponse:\n{}\n\nSincerely,\n404 Team Not Found".format(request_content, response_content)
             noti_timestamp = time.time()
             response = self.send_email(recipient, noti_title, noti_message)
             print("Customer Support Response Notification Status: ", response)
