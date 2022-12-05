@@ -23,7 +23,7 @@ def create_app(test_config=None):
     load_dotenv()
     connString = os.environ['MONGODB_CONNSTRING']
     
-    ## Change this to the docker host//IP ADDRESSS
+    
     client = MongoClient(connString, 27017)
     db_conn = client.core
 
@@ -48,16 +48,33 @@ def create_app(test_config=None):
     service = AuctionService(db_conn, scheduler)
     
     def create_response(response_code, field_name=None, field_obj=None):
+        '''
+        Creates an HTTP response
+        '''
         response_json = {}
         response = make_response()
+
         if field_name and field_obj:
             response_json[field_name] = field_obj
-            ## Fix this for 
             response = make_response(jsonify(response_json))
+
         response.status_code = response_code
         return response
 
-    # a simple page that says hello
+    def admin_status(user_id):
+        '''
+        Checks whether the given user ID belongs to an administrator
+        '''
+        params = { 'user_id': user_id }
+        response = requests.get("http://service.user:5000/getAdminStatus",params=params)
+
+        if response.json()['status_code'] == "200":
+            op = response.json()["detail"]["user_data"]
+        else:
+            op = response.json()["detail"]
+        return op
+
+
     @app.route('/')
     def hello_world():
         return 'Auction Microservice'
@@ -65,6 +82,9 @@ def create_app(test_config=None):
 
     @app.route('/create_listing', methods=["POST"])
     def create_listing():
+        '''
+        Converts an item to a listing, allowing it to be put up for auction
+        '''
 
         payload = request.json
         payload = json.loads(payload)
@@ -98,10 +118,11 @@ def create_app(test_config=None):
 
     @app.route('/get_listing', methods=["GET"])
     def get_listing():
+        '''
+        Finds listings in the database by their id numbers
+        '''
 
         listing_id = int(request.args.get('listing_id'))
-        # payload = json.loads(payload)
-        # listing_id = int(payload['item_id'])
         listing = service.handle_get_listing(listing_id)
 
         if listing and type(listing) != list:
@@ -114,7 +135,9 @@ def create_app(test_config=None):
 
     @app.route('/delete_listing', methods=["DELETE"])
     def delete_listing():
-        print(request.json,'117',flush=True)
+        '''
+        Deletes listings by id number
+        '''
         payload = request.json
         
         listing_id = payload['listing_id']
@@ -134,9 +157,10 @@ def create_app(test_config=None):
 
     @app.route('/update_listing', methods=["POST"])
     def update_listing():
-        print(request.json,type(request.json), flush=True)
+        '''
+        Updates listings with the provided fields
+        '''
         payload = request.json
-        print(type(payload), flush=True)
         details = {}
         user = payload['user_id']
         listing_id = payload['listing_id']
@@ -164,23 +188,31 @@ def create_app(test_config=None):
 
     @app.route('/view_live', methods=["GET"])
     def view_live():
+        '''
+        Shows administrators which auctions are currently live on the site
+        '''
         sort = request.args.get('sort')
-        live_auctions = service.handle_view_live(sort)
+        admin = request.args.get('admin')
+        if admin_status(admin):
+            live_auctions = service.handle_view_live(sort)
 
-        if live_auctions:
-            for listing in live_auctions:
-                del listing['_id']
+            if live_auctions:
+                for listing in live_auctions:
+                    del listing['_id']
 
-        response = create_response(200 if live_auctions else 404, 
-                    field_name='Live Auctions', field_obj=live_auctions)
-
+            response = create_response(200 if live_auctions else 404, 
+                        field_name='Live Auctions', field_obj=live_auctions)
+        else:
+            response = create_response(400)
         return response
     
 
     @app.route('/view_bids', methods=['GET'])
     def view_bids():
+        '''
+        Shows a user the auctions they have bid on
+        '''
         user_id = int(request.args.get('user_id'))
-        print(user_id, type(user_id), flush=True)
         listings = service.view_user_bids(user_id)
 
         response = create_response(200 if listings else 404, 
@@ -189,45 +221,38 @@ def create_app(test_config=None):
         return response
 
 
-    # @app.route('/start_auction', methods=["POST"])
-    # def start_auction():
-    #     payload = request.json
-    #     listing_id = payload['listing_id']
-    #     user = payload['user_id']
-    #     listing = service.handle_get_listing(listing_id)
-    #     start, time = service.handle_start_auction(user, listing)
-    #     if start == 'success':
-    #         response = create_response(200, 'auction begun', time)
-    #     elif not start:
-    #         response = create_response(404)
-    #     elif start == 'unauthorized':
-    #         response = create_response(400)
-    #     return response
-
-
     @app.route('/stop_auction', methods=["POST"])
     def stop_auction():
+        '''
+        Allows an administrator to end an auction early
+        '''
         payload = request.json
         admin = payload['admin_id']
-        listing_id = payload['listing_id']
-        listing = service.handle_get_listing(listing_id)
-        del listing['_id']
+        if admin_status(admin):
+            listing_id = payload['listing_id']
+            
+            listing = service.handle_get_listing(listing_id)
+            del listing['_id']
 
-        details = {
-            'status': 'complete',
-            'end_time': datetime.today()
-        }
-        print(details,"216print", flush=True)
-        stop = service.handle_stop_auction(admin, listing, details)
+            details = {
+                'status': 'complete',
+                'end_time': datetime.today()
+            }
+            stop = service.handle_stop_auction(admin, listing, details)
 
-        if stop == 'success':
-            return create_response(200, f'stopped auction number {listing_id}', listing)
+            if stop == 'success':
+                return create_response(200, f'stopped auction number {listing_id}', listing)
+            else:
+                return create_response(404)
         else:
-            return create_response(404)
+            return create_response(400)
 
 
     @app.route('/take_bid', methods=["POST"])
     def take_bid():
+        '''
+        Records bid placements for users
+        '''
 
         payload = json.loads(request.json)
         bidder = payload['user_id']
@@ -236,7 +261,6 @@ def create_app(test_config=None):
 
         listing = service.handle_get_listing(listing_id)
         del listing['_id']
-        print(listing, flush=True)
         if not listing:
             return create_response(404, "Listing not found")
         elif highest_bid < listing['current_price'] + listing['increment']:
@@ -259,26 +283,39 @@ def create_app(test_config=None):
 
     @app.route('/view_metrics', methods=["GET"])
     def view_metrics():
+        '''
+        Allows administrators to view details from auctions completed
+        within a provided window
+        '''
+        
+        admin = request.args.get('admin')
+        if admin_status(admin):
+            window_start = datetime.strptime(request.args.get('window_start'), '%Y-%m-%dT%H:%M')
+            window_end = datetime.strptime(request.args.get('window_end'), '%Y-%m-%dT%H:%M')
 
-        window_start = datetime.strptime(request.args.get('window_start'), '%Y-%m-%dT%H:%M')
-        window_end = datetime.strptime(request.args.get('window_end'), '%Y-%m-%dT%H:%M')
+            req_auctions = service.handle_view_metrics(window_start, window_end)
 
-        req_auctions = service.handle_view_metrics(window_start, window_end)
+            output = []
+            for listing in req_auctions:
+                del listing['_id']
+                output.append(listing)
 
-        output = []
-        for listing in req_auctions:
-            del listing['_id']
-            output.append(listing)
-
-        return create_response(200 if req_auctions else 404, 
-                              field_name=f'{window_start} - {window_end}', 
-                              field_obj=output)
+            return create_response(200 if req_auctions else 404, 
+                                field_name=f'{window_start} - {window_end}', 
+                                field_obj=output)
+        else:
+            return create_response(400)
 
 
     return app
 
 
 class AuctionService:
+    '''
+    A service class holding the database and scheduler for auction service
+    delvery. All methods implement the above decorated endpoints, or support
+    the implementation of requests and calls to other services.
+    '''
 
     def __init__(self, conn, scheduler):
         self.db = conn.listings
@@ -290,6 +327,9 @@ class AuctionService:
         try:
             res = self.db.find_one({"listing_id": item_details["item_id"]})
             if res:
+                return None
+            
+            if item_details['item_status'] == "BuyNow":
                 return None
                         
             listing_obj = {} 
@@ -319,7 +359,6 @@ class AuctionService:
             starter = listing_obj['start_time']
             if not starter:
                 starter = datetime.today() + relativedelta(days=7)
-                # print(f'No start time provided. Default start time is {starter.strftime("%Y-%m-%d %H:%M:%S")}', flush=True)
 
             job_id = listing_obj['start_id']
             self.scheduler.add_job(self.handle_start_auction, 'date', run_date=starter, args=[listing_obj['seller'], listing], id=job_id)
@@ -349,7 +388,6 @@ class AuctionService:
     def handle_delete_listing(self, listing_id, user):
 
         listing = self.db.find_one({'listing_id': listing_id})
-        print(listing['seller'], listing['bid_list'], flush=True)
         if not listing:
             return None
         elif listing['seller'] != user or len(listing['bid_list']) > 0:
@@ -418,7 +456,6 @@ class AuctionService:
                 job_id = jobs[i]
                 self.scheduler.reschedule_job(job_id, 'date', run_date=mod)
 
-        print(details, "415print", flush=True)
 
         self.db.update_one({'listing_id': listing['listing_id']}, {'$set' : details})
 
@@ -430,9 +467,9 @@ class AuctionService:
         live_auctions = list(self.db.find({'status': 'live'}))
 
         if sort == "Nearest to end":
-            output = sorted(live_auctions, key=lambda listing: listing['end_time']) #datetime.strptime(listing['end_time'], "%Y-%m-%d %H:%M:%S")
+            output = sorted(live_auctions, key=lambda listing: listing['end_time']) 
         elif sort == "Furthest from end":
-            output = sorted(live_auctions, key=lambda listing: listing['end_time'], reverse=True) #datetime.strptime(listing['end_time'], "%Y-%m-%d %H:%M:%S")
+            output = sorted(live_auctions, key=lambda listing: listing['end_time'], reverse=True) 
         else:
             output = live_auctions
 
@@ -447,14 +484,12 @@ class AuctionService:
         stopper = listing['end_time']
         if not stopper:
             stopper = datetime.today() + relativedelta(months=1)
-            print(f'Default auction length is 1 month, this auction will end on {stopper.strftime("%Y-%m-%d %H:%M:%S")}', flush=True)
         else:
             stopper = datetime.strptime(stopper, '%Y-%m-%d %H:%M:%S')
 
         endgame = listing['endgame']
         if not endgame:
             endgame = stopper - relativedelta(hours=1)
-            print('Default endgame alert is sent 1 hour prior to end of auction', flush=True)
         else:
             delta = stopper - datetime.strptime(endgame, '%Y-%m-%d %H:%M:%S')
             endgame = stopper - delta
@@ -483,7 +518,6 @@ class AuctionService:
         listing_name = listing['listing_name']
         listing_id = listing['listing_id']
         seller = listing['seller_email']
-        # seller = 'cvg117@gmail.com'
         bid_list = []
 
         bid = [bidder, highest_bid, datetime.today()]
@@ -539,7 +573,6 @@ class AuctionService:
 
         high_bids = []
         listings = list(self.db.find({'status':'live'}, {'_id': False, 'listing_id': 1, 'listing_name': 1, 'bid_list':1}))
-        print(listings, flush=True)
         for listing in listings:
             for bid in listing['bid_list']:
                 if bid[0] == user_id:
