@@ -35,6 +35,8 @@ services:
     container_name: notification_service
     environment:
       - MONGODB_CONNSTRING=mongodb://notification_db
+      - MAILGUN_API_KEY=${MAILGUN_API_KEY}
+      - MAILGUN_DOMAIN=${MAILGUN_DOMAIN}
     ports:
       - "5001:5000"
     networks:
