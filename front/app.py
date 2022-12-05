@@ -386,6 +386,10 @@ def receiveCustomerSupport_page():
     form = request.form
     resp = requests.get("http://service.user:5000/getEmailId",params={'user_id': session['user']})
     email_id = resp.json()["detail"]["user_data"]
+    
+    now = datetime.datetime.now() # current date and time
+    date_time = now.strftime("%m/%d/%Y, %H:%M:%S")
+    
     params = {
         'user_id': session['user'],
         'recipient': email_id,
@@ -397,10 +401,13 @@ def receiveCustomerSupport_page():
             'title': 're: '+form['title'],
             'content': 'You will receive your response in a couple of days. Thank you for your patience.'
         },
-        'timestamp': datetime.datetime.now()
+        'timestamp': date_time
     }
+    
+    
+    json_params = json.dumps(params)
     # CHECK THIS POST REQUEST ONCE
-    resp = requests.post("http://service.notification:5000/customer_support_response", data=params)
+    resp = requests.post("http://service.notification:5000/customer_support_response", json=json_params)
     return resp.text
     if resp.json()['status_code'] == "201":
         # return resp.json()["detail"]
